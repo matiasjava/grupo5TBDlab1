@@ -11,15 +11,14 @@ public class UserService {
 
     private final UserRepository repo;
 
-    public Long create(UserEntity u) {
-        return repo.create(u);
-    }
-
     public UserEntity getbyid(Long id) {
         return repo.getbyid(id).orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
     }
 
     public void update(Long id, UserEntity u) {
+        // Importante: Asegurarse que el 'update' en el repositorio
+        // NO actualice la contraseña. Eso debe hacerse en un
+        // endpoint separado de 'cambiar contraseña'.
         if (repo.update(id, u) == 0) throw new RuntimeException("Usuario no encontrado");
     }
 

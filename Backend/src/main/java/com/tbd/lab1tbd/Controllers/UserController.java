@@ -6,20 +6,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.net.URI;
-
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
 public class UserController {
 
     private final UserService service;
-
-    @PostMapping
-    public ResponseEntity<Long> create(@RequestBody UserEntity user) {
-        Long id = service.create(user);
-        return ResponseEntity.created(URI.create("/api/users/" + id)).body(id);
-    }
 
     @GetMapping("/{id}")
     public UserEntity getbyid(@PathVariable Long id) {
@@ -28,12 +20,16 @@ public class UserController {
 
     @PutMapping("/{id}")
     public ResponseEntity<Void> update(@PathVariable Long id, @RequestBody UserEntity user) {
+        // (Aquí faltaría lógica para asegurar que el usuario autenticado
+        // solo pueda modificarse a sí mismo)
         service.update(id, user);
         return ResponseEntity.noContent().build();
     }
 
+    // Este endpoint ahora estará PROTEGIDO por JWT.
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
+        // (Aquí faltaría lógica de autorización)
         service.delete(id);
         return ResponseEntity.noContent().build();
     }
