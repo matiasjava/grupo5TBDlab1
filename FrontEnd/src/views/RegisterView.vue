@@ -1,139 +1,201 @@
 <template>
-  <div class="login-container">
-    <div class="card">
-      <h2>Crear cuenta</h2>
+  <div class="background-container">
 
-      <form @submit.prevent="doRegister">
+    <!-- CARRUSEL DE IMÁGENES DE FONDO -->
+    <transition-group name="fade" tag="div" class="image-wrapper">
+      <div
+        v-for="(img, index) in [images[currentImage]]"
+        :key="img"
+        class="bg-image"
+        :style="{ backgroundImage: 'url(' + img + ')' }"
+      ></div>
+    </transition-group>
 
-        <input 
-          type="text" 
-          v-model="nombre"
-          placeholder="Nombre completo"
-          required
-        />
+    <div class="form-wrapper">
+      <v-card elevation="10" rounded="xl" class="pa-8 login-card">
 
-        <input 
-          type="email" 
-          v-model="email"
-          placeholder="Correo"
-          required
-        />
+        <v-card-title class="text-center">
+          <div class="text-h4 font-weight-bold">Crear Cuenta</div>
+          <div class="text-subtitle-2 mt-1">
+            Únete a la comunidad y comparte tus aventuras
+          </div>
+        </v-card-title>
 
-        <input 
-          type="password" 
-          v-model="password"
-          placeholder="Contraseña"
-          required
-        />
+        <v-divider class="my-4" />
 
-        <textarea
-          v-model="biografia"
-          placeholder="Biografía (opcional)"
-          rows="3"
-          style="width:100%; padding:12px; border-radius:10px; border:1px solid #ccc; margin-bottom:14px;"
-        ></textarea>
+        <v-form @submit.prevent="doRegister" v-model="valid">
 
-        <button type="submit">Registrarme</button>
-      </form>
+          <v-text-field
+            v-model="nombre"
+            label="Nombre Completo"
+            prepend-inner-icon="mdi-account"
+            variant="outlined"
+            density="comfortable"
+            :rules="[rules.required]"
+          />
 
-      <p class="register-text">
-        ¿Ya tienes cuenta?
-        <span @click="goLogin">Iniciar sesión</span>
-      </p>
+          <v-text-field
+            v-model="email"
+            label="Correo"
+            prepend-inner-icon="mdi-email-outline"
+            variant="outlined"
+            density="comfortable"
+            :rules="[rules.required]"
+          />
+
+          <v-text-field
+            v-model="password"
+            label="Contraseña"
+            prepend-inner-icon="mdi-lock-outline"
+            type="password"
+            variant="outlined"
+            density="comfortable"
+            :rules="[rules.required]"
+          />
+
+          <v-textarea
+            v-model="biografia"
+            label="Biografía (opcional)"
+            prepend-inner-icon="mdi-text-box-edit-outline"
+            variant="outlined"
+            rows="3"
+            auto-grow
+            density="comfortable"
+          />
+
+          <v-btn
+            block
+            size="large"
+            color="blue-darken-2"
+            class="mt-4"
+            rounded="lg"
+            type="submit"
+          >
+            Registrarme
+          </v-btn>
+        </v-form>
+
+        <div class="text-center mt-4">
+          ¿Ya tienes cuenta?
+          <v-btn variant="text" color="blue-darken-2" @click="goLogin">
+            Iniciar Sesión
+          </v-btn>
+        </div>
+
+      </v-card>
     </div>
+
   </div>
 </template>
 
 <script setup>
 import { ref } from "vue";
 import { useRouter } from "vue-router";
-import { register } from "@/services/authService"; // <-- tu función de backend
+import { register } from "@/services/authService";
+
+import img1 from "@/assets/carrusel/img1.jpg";
+import img2 from "@/assets/carrusel/img2.jpg";
+import img3 from "@/assets/carrusel/img3.jpg";
+import img4 from "@/assets/carrusel/img4.jpg";
+
+const images = [img1, img2, img3, img4];
+
+const currentImage = ref(0);
+
+setInterval(() => {
+  currentImage.value = (currentImage.value + 1) % images.length;
+}, 5000);
 
 const router = useRouter();
-
 const nombre = ref("");
 const email = ref("");
 const password = ref("");
 const biografia = ref("");
+const valid = ref(false);
+
+const rules = { required: v => !!v || "Campo obligatorio" };
 
 const doRegister = async () => {
-  try {
-    await register(
-      nombre.value,
-      email.value,
-      password.value,
-      biografia.value
-    );
+  if (!valid.value) return;
 
+  try {
+    await register(nombre.value, email.value, password.value, biografia.value);
     alert("Cuenta creada con éxito");
     router.push("/login");
-
   } catch (err) {
-    console.error("Error register:", err);
     alert("Error al crear cuenta");
   }
 };
 
-const goLogin = () => {
-  router.push("/login");
-};
+const goLogin = () => router.push("/login");
 </script>
 
 <style scoped>
-/* mismo estilo que login */
-.login-container {
+* {
+  font-family: "Poppins", sans-serif !important;
+}
+
+/* --- CONTENEDOR PRINCIPAL --- */
+.background-container {
+  position: relative;
+  width: 100%;
   height: 100vh;
+  overflow: hidden;
+}
+
+/* --- CARRUSEL --- */
+.image-wrapper {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  inset: 0;
+}
+
+.bg-image {
+  position: absolute;
+  inset: 0;
+
+  width: 102%;     
+  height: 102%;    
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  filter: blur(8px);
+}
+
+/* CROSSFADE */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 1.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+/* --- FORMULARIO --- */
+.form-wrapper {
+  position: absolute;
+  inset: 0;
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #f1f3f5;
+  padding: 20px;
 }
 
-.card {
-  width: 360px;
-  padding: 32px;
-  border-radius: 16px;
+.login-card {
+  width: 100%;
+  max-width: 450px;
   background: white;
-  box-shadow: 0 4px 30px rgba(0,0,0,0.1);
-  text-align: center;
-}
-
-.card h2 {
-  margin-bottom: 20px;
-}
-
-input {
-  width: 100%;
-  padding: 12px;
-  margin-bottom: 14px;
-  border-radius: 10px;
-  border: 1px solid #ccc;
-}
-
-button {
-  width: 100%;
-  padding: 12px;
-  border: none;
-  border-radius: 10px;
-  background: #1d9bf0;
-  color: white;
-  font-size: 16px;
-  cursor: pointer;
-  margin-top: 8px;
-}
-button:hover {
-  background: #0c7ac7;
-}
-
-.register-text {
-  margin-top: 18px;
-  font-size: 14px;
-}
-
-.register-text span {
-  color: #1d9bf0;
-  font-weight: 600;
-  cursor: pointer;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
 }
 </style>
+
+
+
 

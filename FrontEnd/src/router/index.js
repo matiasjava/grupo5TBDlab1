@@ -12,9 +12,10 @@ const requireAuth = (to, from, next) => {
 const router = createRouter({
   history: createWebHistory(),
   routes: [
+    { path: '/', redirect: '/login' },
     { path: '/login', component: LoginView },
     { path: '/register', component: RegisterView },
-    { path: '/', component: HomeView, beforeEnter: requireAuth }
+    { path: '/home', component: HomeView, beforeEnter: requireAuth }
   ]
 })
 
