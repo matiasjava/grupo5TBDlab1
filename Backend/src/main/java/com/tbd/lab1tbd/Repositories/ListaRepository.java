@@ -23,13 +23,14 @@ public class ListaRepository {
 
     private final NamedParameterJdbcTemplate jdbc;
 
-    // RowMapper para la respuesta (incluyendo nombre de usuario)
+    // RowMapper para la respuesta (incluyendo nombre de usuario y total de sitios)
     private static final RowMapper<ListaResponse> RESPONSE_MAPPER = (rs, rowNum) -> new ListaResponse(
             rs.getLong("id_lista"),
             rs.getLong("id_usuario"),
             rs.getString("nombre_usuario"),
             rs.getString("nombre_lista"),
-            rs.getTimestamp("fecha_creacion")
+            rs.getTimestamp("fecha_creacion"),
+            rs.getInt("total_sitios")
     );
     
     // RowMapper para el POJO de SitioTuristico (reutilizado de SitioTuristicoRepository)
@@ -38,10 +39,10 @@ public class ListaRepository {
             rs.getString("nombre"),
             rs.getString("descripcion"),
             rs.getString("tipo"),
-            rs.getDouble("latitud"), 
-            rs.getDouble("longitud"), 
+            rs.getDouble("latitud"),
+            rs.getDouble("longitud"),
             rs.getDouble("calificacion_promedio"),
-            rs.getInt("total_reseñas")
+            rs.getInt("total_resenas")
     );
 
     public Long create(ListaPersonalizada lista) {
@@ -53,10 +54,16 @@ public class ListaRepository {
     }
 
     public List<ListaResponse> findByUsuarioId(Long idUsuario) {
-        String sql = "SELECT l.id AS id_lista, l.nombre AS nombre_lista, l.fecha_creacion, u.id AS id_usuario, u.nombre AS nombre_usuario " +
+        String sql = "SELECT l.id AS id_lista, " +
+                     "l.nombre AS nombre_lista, " +
+                     "l.fecha_creacion, " +
+                     "u.id AS id_usuario, " +
+                     "u.nombre AS nombre_usuario, " +
+                     "(SELECT COUNT(*) FROM lista_sitios ls WHERE ls.id_lista = l.id) AS total_sitios " +
                      "FROM listas_personalizadas l " +
                      "JOIN usuarios u ON l.id_usuario = u.id " +
-                     "WHERE l.id_usuario = :idUsuario ORDER BY l.fecha_creacion DESC";
+                     "WHERE l.id_usuario = :idUsuario " +
+                     "ORDER BY l.fecha_creacion DESC";
         return jdbc.query(sql, Map.of("idUsuario", idUsuario), RESPONSE_MAPPER);
     }
 
@@ -93,7 +100,7 @@ public class ListaRepository {
 
     public List<SitioTuristico> getSitiosByListaId(Long idLista) {
         String sql = "SELECT s.id, s.nombre, s.descripcion, s.tipo, " +
-                     "s.calificacion_promedio, s.total_reseñas, " +
+                     "s.calificacion_promedio, s.total_resenas, " +
                      "ST_Y(s.coordenadas::geometry) AS latitud, " +
                      "ST_X(s.coordenadas::geometry) AS longitud " +
                      "FROM sitios_turisticos s " +

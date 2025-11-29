@@ -12,7 +12,7 @@ import java.net.URI;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("")
 @RequiredArgsConstructor
 public class ReseñaController {
 
@@ -31,7 +31,7 @@ public class ReseñaController {
     ) {
         String userEmail = authentication.getName();
         Long idReseña = reseñaService.create(idSitio, request, userEmail);
-        return ResponseEntity.created(URI.create("/api/reseñas/" + idReseña)).body(idReseña);
+        return ResponseEntity.created(URI.create("/reseñas/" + idReseña)).body(idReseña);
     }
 
     /**
@@ -42,6 +42,16 @@ public class ReseñaController {
     @GetMapping("/sitios/{idSitio}/reseñas")
     public List<ReseñaResponse> getReseñasPorSitio(@PathVariable Long idSitio) {
         return reseñaService.getBySitioId(idSitio);
+    }
+
+    /**
+     * GET /api/resenas/usuario/{idUsuario}
+     * Obtiene todas las reseñas de un usuario específico.
+     * Requiere autenticación JWT.
+     */
+    @GetMapping("/resenas/usuario/{idUsuario}")
+    public List<ReseñaResponse> getReseñasPorUsuario(@PathVariable Long idUsuario) {
+        return reseñaService.getByUsuarioId(idUsuario);
     }
 
     /**

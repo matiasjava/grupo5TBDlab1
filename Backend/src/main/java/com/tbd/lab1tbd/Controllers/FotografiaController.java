@@ -12,7 +12,7 @@ import java.net.URI;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("")
 @RequiredArgsConstructor
 public class FotografiaController {
 
@@ -31,7 +31,7 @@ public class FotografiaController {
     ) {
         String userEmail = authentication.getName();
         Long idFotografia = fotografiaService.create(idSitio, request, userEmail);
-        return ResponseEntity.created(URI.create("/api/fotografias/" + idFotografia)).body(idFotografia);
+        return ResponseEntity.created(URI.create("/fotografias/" + idFotografia)).body(idFotografia);
     }
 
     /**
@@ -42,6 +42,16 @@ public class FotografiaController {
     @GetMapping("/sitios/{idSitio}/fotografias")
     public List<FotografiaResponse> getFotografiasPorSitio(@PathVariable Long idSitio) {
         return fotografiaService.getBySitioId(idSitio);
+    }
+
+    /**
+     * GET /api/fotografias/usuario/{idUsuario}
+     * Obtiene todas las fotografías de un usuario específico.
+     * Requiere autenticación JWT.
+     */
+    @GetMapping("/fotografias/usuario/{idUsuario}")
+    public List<FotografiaResponse> getFotografiasPorUsuario(@PathVariable Long idUsuario) {
+        return fotografiaService.getByUsuarioId(idUsuario);
     }
 
     /**

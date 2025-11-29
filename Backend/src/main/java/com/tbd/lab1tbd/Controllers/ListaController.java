@@ -13,7 +13,7 @@ import java.net.URI;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/listas")
+@RequestMapping("/listas")
 @RequiredArgsConstructor
 public class ListaController {
 
@@ -26,13 +26,18 @@ public class ListaController {
     ) {
         String userEmail = authentication.getName();
         Long idLista = listaService.create(request, userEmail);
-        return ResponseEntity.created(URI.create("/api/listas/" + idLista)).body(idLista);
+        return ResponseEntity.created(URI.create("/listas/" + idLista)).body(idLista);
     }
 
     @GetMapping("/mis-listas")
     public List<ListaResponse> getMisListas(Authentication authentication) {
         String userEmail = authentication.getName();
         return listaService.getByUsuario(userEmail);
+    }
+
+    @GetMapping("/usuario/{idUsuario}")
+    public List<ListaResponse> getListasByUsuarioId(@PathVariable Long idUsuario) {
+        return listaService.getByUsuarioId(idUsuario);
     }
 
     @DeleteMapping("/{idLista}")

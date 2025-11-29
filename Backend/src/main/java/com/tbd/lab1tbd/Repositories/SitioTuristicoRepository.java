@@ -37,14 +37,14 @@ public class SitioTuristicoRepository {
                     rs.getDouble("latitud"), // Obtenido del alias ST_Y
                     rs.getDouble("longitud"), // Obtenido del alias ST_X
                     rs.getDouble("calificacion_promedio"),
-                    rs.getInt("total_reseñas")
+                    rs.getInt("total_resenas")
             );
         }
     };
 
     // Columnas base para las consultas SELECT
-    private static final String SELECT_COLUMNS = 
-        "id, nombre, descripcion, tipo, calificacion_promedio, total_reseñas, " +
+    private static final String SELECT_COLUMNS =
+        "id, nombre, descripcion, tipo, calificacion_promedio, total_resenas, " +
         "ST_Y(coordenadas::geometry) AS latitud, " +
         "ST_X(coordenadas::geometry) AS longitud ";
 
@@ -119,6 +119,66 @@ public class SitioTuristicoRepository {
     public int delete(Long id) {
         String sql = "DELETE FROM sitios_turisticos WHERE id = :id";
         return jdbc.update(sql, Map.of("id", id));
+    }
+
+    /**
+     * Obtiene los sitios turísticos más populares (ordenados por calificación y número de reseñas).
+     * Retorna los top 10 sitios con mejor calificación.
+     */
+    public List<SitioTuristico> findPopulares() {
+        String sql = "SELECT " + SELECT_COLUMNS +
+                     "FROM sitios_turisticos " +
+                     "WHERE total_resenas > 0 " +
+                     "ORDER BY calificacion_promedio DESC, total_resenas DESC " +
+                     "LIMIT 10";
+        return jdbc.query(sql, MAPPER);
+    }
+
+    /**
+     * Busca sitios turísticos por tipo.
+     */
+    public List<SitioTuristico> findByTipo(String tipo) {
+        String sql = "SELECT " + SELECT_COLUMNS +
+                     "FROM sitios_turisticos " +
+                     "WHERE tipo = :tipo";
+        return jdbc.query(sql, Map.of("tipo", tipo), MAPPER);
+    }
+
+    /**
+     * Busca sitios turísticos cercanos a una ubicación específica.
+     * Utiliza el procedimiento almacenado 'buscar_sitios_cercanos' de PostGIS.
+     *
+     * @param longitud Longitud de la ubicación de referencia
+     * @param latitud Latitud de la ubicación de referencia
+     * @param radioMetros Radio de búsqueda en metros
+     * @return Lista de sitios turísticos dentro del radio especificado
+     */
+    public List<SitioTuristico> findCercanos(Double longitud, Double latitud, Integer radioMetros) {
+        // Query directa usando ST_DWithin de PostGIS (no usa la función buscar_sitios_cercanos)
+        String sql = """
+                SELECT
+                    id,
+                    nombre,
+                    descripcion,
+                    tipo,
+                    calificacion_promedio,
+                    total_resenas,
+                    ST_Y(coordenadas::geometry) AS latitud,
+                    ST_X(coordenadas::geometry) AS longitud
+                FROM sitios_turisticos
+                WHERE ST_DWithin(
+                    coordenadas,
+                    ST_MakePoint(:longitud, :latitud)::geography,
+                    :radio
+                )
+                """;
+
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("longitud", longitud)
+                .addValue("latitud", latitud)
+                .addValue("radio", radioMetros);
+
+        return jdbc.query(sql, params, MAPPER);
     }
 }
 

@@ -25,12 +25,12 @@ public class UserRepository {
                     rs.getLong("id"),
                     rs.getString("nombre"),
                     rs.getString("email"),
-                    rs.getString("contrasena_hash")
+                    rs.getString("contrasena_hash"),
+                    rs.getString("biografia")
             );
         }
     };
 
-    // Nota: El hasheo se hace en el SERVICIO, antes de llamar a este método.
     public Long create(UserEntity u) {
         String sql = """
                 INSERT INTO usuarios(nombre, email, contrasena_hash)
@@ -45,17 +45,22 @@ public class UserRepository {
     }
 
     public Optional<UserEntity> getbyid(Long id) {
-        String sql = "SELECT id, nombre, email, contrasena_hash FROM usuarios WHERE id=:id";
+        String sql = "SELECT id, nombre, email, contrasena_hash, biografia FROM usuarios WHERE id=:id";
         try {
             return Optional.ofNullable(jdbc.queryForObject(sql, Map.of("id", id), MAPPER));
         } catch (EmptyResultDataAccessException e) {
             return Optional.empty();
         }
     }
+
+    // Alias para compatibilidad
+    public Optional<UserEntity> findById(Long id) {
+        return getbyid(id);
+    }
     
     // ... (El método getByEmail será necesario para el Login) ...
     public Optional<UserEntity> getByEmail(String email) {
-        String sql = "SELECT id, nombre, email, contrasena_hash FROM usuarios WHERE email=:email";
+        String sql = "SELECT id, nombre, email, contrasena_hash, biografia FROM usuarios WHERE email=:email";
         try {
             return Optional.ofNullable(jdbc.queryForObject(sql, Map.of("email", email), MAPPER));
         } catch (EmptyResultDataAccessException e) {
@@ -66,14 +71,14 @@ public class UserRepository {
     public int update(Long id, UserEntity u) {
         String sql = """
                 UPDATE usuarios
-                   SET nombre=:nombre, email=:email
-                   -- Generalmente, la contraseña se actualiza en un endpoint separado
+                   SET nombre=:nombre, biografia=:biografia
+                   -- Email y contraseña no se actualizan aquí
                 WHERE id=:id
                 """;
         MapSqlParameterSource p = new MapSqlParameterSource()
                 .addValue("id", id)
                 .addValue("nombre", u.getName())
-                .addValue("email", u.getEmail());
+                .addValue("biografia", u.getBiografia());
         return jdbc.update(sql, p);
     }
 
