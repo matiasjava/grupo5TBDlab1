@@ -13,5 +13,5 @@ import lombok.NoArgsConstructor;
 public class EstadisticasPorTipoResponse {
     private String tipo;
     private Double calificacionPromedioGeneral;
-    private Integer totalResenasGeneral;
+    private Integer totalreseñasGeneral;
 }

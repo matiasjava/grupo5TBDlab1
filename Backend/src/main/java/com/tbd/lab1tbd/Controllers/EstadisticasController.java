@@ -67,12 +67,12 @@ public class EstadisticasController {
     }
 
     /**
-     * GET /api/estadisticas/resenas-largas
+     * GET /api/estadisticas/reseñas-largas
      * Consulta #8: Top 3 reseñas más largas de usuarios con promedio >4.0.
      */
-    @GetMapping("/resenas-largas")
-    public ResponseEntity<List<ResenaLargaResponse>> obtenerResenasLargas() {
-        return ResponseEntity.ok(service.obtenerResenasLargas());
+    @GetMapping("/reseñas-largas")
+    public ResponseEntity<List<ResenaLargaResponse>> obtenerreseñasLargas() {
+        return ResponseEntity.ok(service.obtenerreseñasLargas());
     }
 
     /**

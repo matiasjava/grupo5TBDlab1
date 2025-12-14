@@ -13,5 +13,5 @@ import lombok.NoArgsConstructor;
 public class SitioValoracionInusualResponse {
     private String nombre;
     private Double calificacionPromedio;
-    private Integer totalResenas;
+    private Integer totalreseñas;
 }

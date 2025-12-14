@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 public class ResumenContribucionesResponse {
     private Long idUsuario;
     private String nombre;
-    private Integer totalResenas;
+    private Integer totalreseñas;
     private Integer totalFotos;
     private Integer totalListas;
 }

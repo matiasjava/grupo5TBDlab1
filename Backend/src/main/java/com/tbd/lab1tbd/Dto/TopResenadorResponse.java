@@ -12,5 +12,5 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class TopResenadorResponse {
     private String nombreUsuario;
-    private Integer conteoResenas;
+    private Integer conteoreseñas;
 }

@@ -37,8 +37,8 @@ public class EstadisticasService {
         return repository.obtenerSitiosPocasContribuciones();
     }
 
-    public List<ResenaLargaResponse> obtenerResenasLargas() {
-        return repository.obtenerResenasLargas();
+    public List<ResenaLargaResponse> obtenerreseñasLargas() {
+        return repository.obtenerreseñasLargas();
     }
 
     public List<ResumenContribucionesResponse> obtenerResumenContribuciones() {

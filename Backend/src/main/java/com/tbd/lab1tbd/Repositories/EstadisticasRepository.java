@@ -29,18 +29,18 @@ public class EstadisticasRepository {
                 SELECT
                     tipo,
                     AVG(calificacion_promedio) AS calificacion_promedio_general,
-                    SUM(total_resenas) AS total_resenas_general
+                    SUM(total_reseñas) AS total_reseñas_general
                 FROM
                     sitios_turisticos
                 GROUP BY
                     tipo
-                ORDER BY total_resenas_general DESC
+                ORDER BY total_reseñas_general DESC
                 """;
 
         return jdbc.query(sql, (rs, rowNum) -> new EstadisticasPorTipoResponse(
                 rs.getString("tipo"),
                 rs.getDouble("calificacion_promedio_general"),
-                rs.getInt("total_resenas_general")
+                rs.getInt("total_reseñas_general")
         ));
     }
 
@@ -49,12 +49,12 @@ public class EstadisticasRepository {
      */
     public List<TopResenadorResponse> obtenerTopResenadores() {
         String sql = """
-                WITH ResenasRecientes AS (
+                WITH reseñasRecientes AS (
                     SELECT
                         id_usuario,
-                        COUNT(*) AS conteo_resenas
+                        COUNT(*) AS conteo_reseñas
                     FROM
-                        resenas
+                        reseñas
                     WHERE
                         fecha >= (CURRENT_TIMESTAMP - INTERVAL '6 months')
                     GROUP BY
@@ -62,19 +62,19 @@ public class EstadisticasRepository {
                 )
                 SELECT
                     u.nombre AS nombre_usuario,
-                    rr.conteo_resenas
+                    rr.conteo_reseñas
                 FROM
-                    ResenasRecientes rr
+                    reseñasRecientes rr
                 JOIN
                     usuarios u ON rr.id_usuario = u.id
                 ORDER BY
-                    rr.conteo_resenas DESC
+                    rr.conteo_reseñas DESC
                 LIMIT 5
                 """;
 
         return jdbc.query(sql, (rs, rowNum) -> new TopResenadorResponse(
                 rs.getString("nombre_usuario"),
-                rs.getInt("conteo_resenas")
+                rs.getInt("conteo_reseñas")
         ));
     }
 
@@ -114,20 +114,20 @@ public class EstadisticasRepository {
                 SELECT
                     nombre,
                     calificacion_promedio,
-                    total_resenas
+                    total_reseñas
                 FROM
                     sitios_turisticos
                 WHERE
                     calificacion_promedio > 4.5
-                    AND total_resenas < 10
-                    AND total_resenas > 0
+                    AND total_reseñas < 10
+                    AND total_reseñas > 0
                 ORDER BY calificacion_promedio DESC
                 """;
 
         return jdbc.query(sql, (rs, rowNum) -> new SitioValoracionInusualResponse(
                 rs.getString("nombre"),
                 rs.getDouble("calificacion_promedio"),
-                rs.getInt("total_resenas")
+                rs.getInt("total_reseñas")
         ));
     }
 
@@ -142,7 +142,7 @@ public class EstadisticasRepository {
                         id_sitio,
                         MAX(fecha) AS ultima_fecha
                     FROM (
-                        SELECT id_sitio, fecha FROM resenas
+                        SELECT id_sitio, fecha FROM reseñas
                         UNION ALL
                         SELECT id_sitio, fecha FROM fotografias
                     ) AS contribuciones
@@ -173,14 +173,14 @@ public class EstadisticasRepository {
      * Consulta #8: Análisis de Contenido de Reseñas
      * (3 más largas de usuarios con promedio > 4.0)
      */
-    public List<ResenaLargaResponse> obtenerResenasLargas() {
+    public List<ResenaLargaResponse> obtenerreseñasLargas() {
         String sql = """
                 WITH PromedioUsuario AS (
                     SELECT
                         id_usuario,
                         AVG(calificacion) AS promedio_calificacion
                     FROM
-                        resenas
+                        reseñas
                     GROUP BY
                         id_usuario
                     HAVING
@@ -192,7 +192,7 @@ public class EstadisticasRepository {
                     r.contenido,
                     LENGTH(r.contenido) AS longitud_resena
                 FROM
-                    resenas r
+                    reseñas r
                 JOIN
                     usuarios u ON r.id_usuario = u.id
                 JOIN
@@ -217,12 +217,12 @@ public class EstadisticasRepository {
      * (Vista Materializada)
      */
     public List<ResumenContribucionesResponse> obtenerResumenContribuciones() {
-        String sql = "SELECT * FROM resumen_contribuciones_usuario ORDER BY total_resenas DESC";
+        String sql = "SELECT * FROM resumen_contribuciones_usuario ORDER BY total_reseñas DESC";
 
         return jdbc.query(sql, (rs, rowNum) -> new ResumenContribucionesResponse(
                 rs.getLong("id_usuario"),
                 rs.getString("nombre"),
-                rs.getInt("total_resenas"),
+                rs.getInt("total_reseñas"),
                 rs.getInt("total_fotos"),
                 rs.getInt("total_listas")
         ));
