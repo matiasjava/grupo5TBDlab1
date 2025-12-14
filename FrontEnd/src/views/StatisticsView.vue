@@ -147,6 +147,30 @@
         <p v-else class="no-data">No hay reseñas disponibles</p>
       </div>
 
+      <!-- Consulta #5: Análisis de Popularidad por Región -->
+      <div class="stat-card">
+        <h2>🌍 Consulta #5: Popularidad por Región</h2>
+        <p class="description">Total de reseñas agrupadas por ciudad</p>
+
+        <div v-if="popularityByRegion.length > 0" class="data-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Región/Ciudad</th>
+                <th>Total Reseñas</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(stat, index) in popularityByRegion" :key="index">
+                <td class="name-cell">{{ stat.region }}</td>
+                <td class="count-cell">{{ stat.totalResenas }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p v-else class="no-data">No hay datos por región</p>
+      </div>
+
       <!-- Consulta #9: Resumen de Contribuciones -->
       <div class="stat-card full-width">
         <h2>🏆 Consulta #9: Resumen de Contribuciones</h2>
@@ -196,6 +220,7 @@ const unusualRatings = ref([])
 const lowContribution = ref([])
 const longestReviews = ref([])
 const contributionsSummary = ref([])
+const popularityByRegion = ref([])
 
 const loading = ref(false)
 const error = ref(null)
@@ -212,7 +237,8 @@ const loadAllStatistics = async () => {
       statisticsService.getUnusualRatings(),
       statisticsService.getLowContributionSites(),
       statisticsService.getLongestReviews(),
-      statisticsService.getContributionsSummary()
+      statisticsService.getContributionsSummary(),
+      statisticsService.getPopularityByRegion()
     ])
 
     statsByType.value = results[0].status === 'fulfilled' ? results[0].value : []
@@ -222,6 +248,7 @@ const loadAllStatistics = async () => {
     lowContribution.value = results[4].status === 'fulfilled' ? results[4].value : []
     longestReviews.value = results[5].status === 'fulfilled' ? results[5].value : []
     contributionsSummary.value = results[6].status === 'fulfilled' ? results[6].value : []
+    popularityByRegion.value = results[7].status === 'fulfilled' ? results[7].value : []
 
     const failedRequests = results.filter(r => r.status === 'rejected')
     if (failedRequests.length > 0) {

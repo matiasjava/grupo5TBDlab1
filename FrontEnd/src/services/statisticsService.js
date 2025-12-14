@@ -36,5 +36,10 @@ export const statisticsService = {
   async getContributionsSummary() {
     const response = await api.get('/estadisticas/resumen-contribuciones')
     return response.data
-  }
+  },
+
+  async getPopularityByRegion() {
+    const response = await api.get('/estadisticas/popularidad-region')
+    return response.data
+  },
 }
