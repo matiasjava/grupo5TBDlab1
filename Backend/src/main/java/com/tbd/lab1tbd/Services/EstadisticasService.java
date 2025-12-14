@@ -44,4 +44,8 @@ public class EstadisticasService {
     public List<ResumenContribucionesResponse> obtenerResumenContribuciones() {
         return repository.obtenerResumenContribuciones();
     }
+
+    public List<EstadisticasPorRegionResponse> obtenerPopularidadPorRegion() {
+        return repository.obtenerPopularidadPorRegion();
+    }
 }

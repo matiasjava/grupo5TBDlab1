@@ -58,6 +58,15 @@ public class EstadisticasController {
     }
 
     /**
+     *
+     * Consulta #5:  Análisis de Popularidad por Región
+     */
+    @GetMapping("/popularidad-region")
+    public ResponseEntity<List<EstadisticasPorRegionResponse>> obtenerPopularidadPorRegion() {
+        return ResponseEntity.ok(service.obtenerPopularidadPorRegion());
+    }
+
+    /**
      * GET /api/estadisticas/pocas-contribuciones
      * Consulta #7: Sitios con pocas contribuciones (sin actividad en 3 meses).
      */
@@ -83,4 +92,5 @@ public class EstadisticasController {
     public ResponseEntity<List<ResumenContribucionesResponse>> obtenerResumenContribuciones() {
         return ResponseEntity.ok(service.obtenerResumenContribuciones());
     }
+
 }

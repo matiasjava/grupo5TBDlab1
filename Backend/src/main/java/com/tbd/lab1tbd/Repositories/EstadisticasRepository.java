@@ -227,4 +227,27 @@ public class EstadisticasRepository {
                 rs.getInt("total_listas")
         ));
     }
+
+
+    //Consulta #5: Analisis de popularidad por region
+    public List<EstadisticasPorRegionResponse> obtenerPopularidadPorRegion() {
+        String sql = """
+                SELECT 
+                    ciudad AS region, 
+                    SUM(total_reseñas) AS total_resenas_por_ciudad
+                FROM 
+                    sitios_turisticos
+                WHERE 
+                    ciudad IS NOT NULL
+                GROUP BY 
+                    ciudad
+                ORDER BY 
+                    total_resenas_por_ciudad DESC
+                """;
+
+        return jdbc.query(sql, (rs, rowNum) -> new EstadisticasPorRegionResponse(
+                rs.getString("region"),
+                rs.getLong("total_resenas_por_ciudad")
+        ));
+    }
 }
