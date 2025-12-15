@@ -41,8 +41,6 @@ export const useSitesStore = defineStore('sites', () => {
     error.value = null
     try {
       const newSiteId = await sitesService.create(siteData)
-      // Backend returns only ID, not full object
-      // Component should reload the list after creation
       return newSiteId
     } catch (err) {
       error.value = err.response?.data?.message || 'Error al crear sitio'

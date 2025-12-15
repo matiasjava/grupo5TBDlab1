@@ -34,9 +34,9 @@ public class ApplicationConfig {
                     // Convertimos nuestro UserEntity a UserDetails de Spring Security
                     .map(user -> {
                         String hash = user.getPassword();
-                        logger.info("✅ Usuario encontrado - Email: {}", username);
-                        logger.info("📝 Hash longitud: {} caracteres", hash != null ? hash.length() : 0);
-                        logger.info("📝 Hash completo: {}", hash);
+                        logger.info("Usuario encontrado - Email: {}", username);
+                        logger.info("Hash longitud: {} caracteres", hash != null ? hash.length() : 0);
+                        logger.info("Hash completo: {}", hash);
 
                         return new org.springframework.security.core.userdetails.User(
                                 user.getEmail(),
@@ -45,7 +45,7 @@ public class ApplicationConfig {
                         );
                     })
                     .orElseThrow(() -> {
-                        logger.error("❌ Usuario NO encontrado: {}", username);
+                        logger.error("Usuario NO encontrado: {}", username);
                         return new UsernameNotFoundException("Usuario no encontrado con email: " + username);
                     });
         };
