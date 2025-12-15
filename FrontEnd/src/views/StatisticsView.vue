@@ -55,7 +55,7 @@
           <div v-for="(reviewer, index) in topReviewers" :key="index" class="leaderboard-item">
             <span class="rank">{{ index + 1 }}°</span>
             <span class="name">{{ reviewer.nombreUsuario }}</span>
-            <span class="count">{{ reviewer.conteoResenas }} reseñas</span>
+            <span class="count">{{ reviewer.conteoreseñas }} reseñas</span>
           </div>
         </div>
         <p v-else class="no-data">No hay reseñadores activos en los últimos 6 meses</p>
@@ -97,7 +97,7 @@
             <div class="site-name">{{ site.nombre }}</div>
             <div class="site-stats">
               <span class="rating">⭐ {{ site.calificacionPromedio?.toFixed(1) }}</span>
-              <span class="count">{{ site.totalResenas }} reseñas</span>
+              <span class="count">{{ site.totalreseñas }} reseñas</span>
             </div>
           </div>
         </div>
@@ -191,10 +191,10 @@
               <tr v-for="user in contributionsSummary" :key="user.idUsuario">
                 <td class="name-cell">{{ user.nombre }}</td>
                 <td class="count-cell">{{ user.totalreseñas || 0 }}</td>
-                <td class="count-cell">{{ user.totalfotografias || 0 }}</td>
-                <td class="count-cell">{{ user.totallistas || 0 }}</td>
+                <td class="count-cell">{{ user.totalFotos || 0 }}</td>
+                <td class="count-cell">{{ user.totalListas || 0 }}</td>
                 <td class="total-cell">
-                  {{ (user.totalreseñas || 0) + (user.totalfotografias || 0) + (user.totallistas || 0) }}
+                  {{ (user.totalreseñas || 0) + (user.totalFotos || 0) + (user.totalListas || 0) }}
                 </td>
               </tr>
             </tbody>
@@ -571,6 +571,9 @@ td {
   font-style: italic;
   padding-left: 1rem;
   border-left: 3px solid #3498db;
+  
+  
+  overflow-wrap: break-word;
 }
 
 @media (max-width: 768px) {

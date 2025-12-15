@@ -158,6 +158,8 @@ const handleDelete = () => {
   margin: 0;
   line-height: 1.6;
   word-wrap: break-word;
+
+  word-break: break-word;
 }
 
 @media (max-width: 768px) {

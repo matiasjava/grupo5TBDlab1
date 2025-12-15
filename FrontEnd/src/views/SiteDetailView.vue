@@ -408,12 +408,15 @@ section h2 {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1.5rem;
+  overflow-wrap: break-word;
 }
 
 .reviews-list {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+
+  overflow-wrap: break-word;
 }
 
 .no-content {

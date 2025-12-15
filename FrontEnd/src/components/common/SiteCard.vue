@@ -5,13 +5,16 @@
       <div v-else class="no-image">Sin imagen</div>
       <span class="site-type">{{ site.tipo }}</span>
     </div>
+    
     <div class="site-content">
       <h3 class="site-name">{{ site.nombre }}</h3>
       <p class="site-description">{{ truncateDescription(site.descripcion) }}</p>
+      
       <div class="site-footer">
         <RatingStars :rating="site.calificacionPromedio || 0" />
+        
         <span class="reviews-count">
-          {{ site.totalResenas || 0 }} reseñas
+          {{ reviewsCount }} reseñas
         </span>
       </div>
     </div>
@@ -20,6 +23,7 @@
 
 <script setup>
 import { useRouter } from 'vue-router'
+import { computed } from 'vue'
 import RatingStars from './RatingStars.vue'
 
 const props = defineProps({
@@ -30,6 +34,11 @@ const props = defineProps({
 })
 
 const router = useRouter()
+
+// Lógica simplificada: apunta directo a la propiedad de Java 'totalreseñas'
+const reviewsCount = computed(() => {
+  return props.site.totalreseñas || 0
+})
 
 const truncateDescription = (text) => {
   if (!text) return ''

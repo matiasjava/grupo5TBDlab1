@@ -66,16 +66,26 @@
         </div>
 
         <div class="tab-content">
+          
           <div v-if="activeTab === 'reviews'" class="reviews-list">
             <h2>Mis Reseñas</h2>
-            <div v-if="reviews.length > 0" class="content-grid">
-              <div v-for="review in reviews" :key="review.id" class="review-item">
-                <router-link :to="`/sitios/${review.sitioId}`" class="item-link">
-                  <h3>{{ review.sitioNombre }}</h3>
+            <div v-if="reviews.length > 0" class="reviews-grid">
+              <div v-for="review in reviews" :key="review.id" class="review-item-container">
+                <router-link 
+                  :to="`/sitios/${review.idSitio}`" 
+                  class="review-card-link"
+                >
+                  <div class="review-header">
+                    <h3>{{ review.nombreSitio }}</h3>
+                    <RatingStars :rating="review.calificacion" :show-value="false" />
+                  </div>
+                  
+                  <p class="review-text">{{ review.contenido }}</p>
+                  
+                  <div class="review-footer">
+                    <small>{{ formatDate(review.fecha) }}</small>
+                  </div>
                 </router-link>
-                <RatingStars :rating="review.calificacion" :show-value="false" />
-                <p>{{ review.contenido }}</p>
-                <small>{{ formatDate(review.fecha) }}</small>
               </div>
             </div>
             <p v-else class="no-content">No has escrito reseñas aún.</p>
@@ -85,12 +95,12 @@
             <h2>Mis Fotografías</h2>
             <div v-if="photos.length > 0" class="photos-grid">
               <div v-for="photo in photos" :key="photo.id" class="photo-item">
-                <img :src="photo.url" :alt="photo.sitioNombre" />
-                <div class="photo-info">
-                  <router-link :to="`/sitios/${photo.sitioId}`">
-                    {{ photo.sitioNombre }}
-                  </router-link>
-                </div>
+                <router-link :to="`/sitios/${photo.idSitio}`" class="photo-card-link">
+                  <img :src="photo.url" :alt="photo.sitioNombre" />
+                  <div class="photo-info">
+                    <span>{{ photo.nombreSitio }}</span>
+                  </div>
+                </router-link>
               </div>
             </div>
             <p v-else class="no-content">No has subido fotografías aún.</p>
@@ -98,9 +108,17 @@
 
           <div v-if="activeTab === 'lists'" class="lists-section">
             <h2>Mis Listas</h2>
-            <router-link to="/mis-listas" class="btn-primary">
-              Ver todas mis listas
-            </router-link>
+            <div v-if="listsStore.lists.length > 0">
+               <router-link to="/mis-listas" class="btn-primary">
+                 Ver todas mis listas
+               </router-link>
+            </div>
+            <div v-else>
+               <p class="no-content">No tienes listas creadas.</p>
+               <router-link to="/mis-listas" class="btn-primary">
+                 Crear una lista
+               </router-link>
+            </div>
           </div>
         </div>
       </div>
@@ -184,12 +202,10 @@ const formatDate = (dateString) => {
 
 const onProfileUpdated = () => {
   showEditProfile.value = false
-  // El perfil ya está actualizado en authStore por ProfileEditForm
   profileUser.value = { ...currentUser.value }
 }
 
 const onFollowChanged = () => {
-  // Recargar estadísticas cuando cambia el seguimiento
   loadFollowersStats()
 }
 
@@ -218,7 +234,6 @@ const loadProfile = async () => {
       return
     }
 
-    // Obtener ID del perfil a mostrar
     const userId = route.params.id ? parseInt(route.params.id) : currentUser.value?.id
     
     if (!userId) {
@@ -229,16 +244,13 @@ const loadProfile = async () => {
 
     profileUserId.value = userId
 
-    // Si es perfil propio, usar datos del authStore
     if (isOwnProfile.value) {
       profileUser.value = { ...currentUser.value }
     } else {
-      // Si es perfil de otro usuario, cargar desde API
       const userData = await userService.getUserById(userId)
       profileUser.value = userData
     }
 
-    
     try {
       await Promise.all([
         reviewsStore.fetchByUserId(userId).catch(err => {
@@ -273,20 +285,22 @@ const loadProfile = async () => {
     loading.value = false
   }
 }
+
 watch(activeTab, async (newTab) => {
-  if (newTab === 'reviews' && profileUserId.value) {
+  if (!profileUserId.value) return
+
+  if (newTab === 'reviews') {
     await reviewsStore.fetchByUserId(profileUserId.value)
     stats.value.totalResenas = reviews.value.length
-  } else if (newTab === 'photos' && profileUserId.value) {
+  } else if (newTab === 'photos') {
     await photosStore.fetchByUserId(profileUserId.value)
     stats.value.totalFotos = photos.value.length
-  } else if (newTab === 'lists' && profileUserId.value) {
+  } else if (newTab === 'lists') {
     await listsStore.fetchByUserId(profileUserId.value)
     stats.value.totalListas = listsStore.lists.length
   }
 })
 
-// Watch para recargar cuando cambie el parámetro de ruta
 watch(() => route.params.id, () => {
   if (route.name === 'profile' || route.name === 'user-profile') {
     loadProfile()
@@ -299,6 +313,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* ESTILOS GENERALES */
 .profile-view {
   min-height: 100vh;
   background-color: #f8f9fa;
@@ -311,6 +326,7 @@ onMounted(() => {
   padding: 2rem;
 }
 
+/* HEADER DEL PERFIL */
 .profile-header {
   background-color: white;
   padding: 2rem;
@@ -373,6 +389,7 @@ onMounted(() => {
   background-color: #2980b9;
 }
 
+/* ESTADÍSTICAS */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -410,6 +427,7 @@ onMounted(() => {
   font-size: 0.9rem;
 }
 
+/* PESTAÑAS */
 .tabs {
   background-color: white;
   padding: 1rem;
@@ -449,39 +467,77 @@ onMounted(() => {
   color: #2c3e50;
 }
 
-.content-grid {
+/* === ESTILOS PARA RESEÑAS (NUEVO: ESTILO TARJETA) === */
+.reviews-grid {
   display: grid;
-  gap: 1rem;
+  /* Tarjetas con ancho mínimo de 300px, se ajustan solas */
+  grid-template-columns: repeat(auto-fill, minmax(900px, 1fr));
+  gap: 1.5rem;
 }
 
-.review-item {
+.review-item-container {
+  height: 100%; /* Para que todas las tarjetas tengan la misma altura */
+}
+
+.review-card-link {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  
+  background-color: white;
   border: 1px solid #e0e0e0;
-  padding: 1rem;
-  border-radius: 6px;
+  border-radius: 8px;
+  padding: 1.5rem;
+  
+  text-decoration: none; /* Quita subrayado */
+  color: inherit;      /* Mantiene texto negro */
+  cursor: pointer;
+  
+  transition: all 0.3s ease;
 }
 
-.item-link {
-  text-decoration: none;
-  color: #3498db;
+/* Efecto Hover en la tarjeta de reseña */
+.review-card-link:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-color: #3498db;
 }
 
-.item-link:hover {
-  text-decoration: underline;
+.review-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
 }
 
-.review-item h3 {
-  margin: 0 0 0.5rem 0;
+.review-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #2c3e50;
+  font-weight: 600;
+  transition: color 0.3s;
 }
 
-.review-item p {
-  margin: 0.5rem 0;
+.review-card-link:hover h3 {
+  color: #3498db; /* Título azul al pasar el mouse por la tarjeta */
+}
+
+.review-text {
   color: #34495e;
+  margin: 0 0 1rem 0;
+  line-height: 1.5;
+  flex-grow: 1; /* Empuja el footer hacia abajo */
+
+  overflow-wrap: break-word;
 }
 
-.review-item small {
+.review-footer small {
   color: #95a5a6;
+  font-size: 0.85rem;
 }
 
+
+/* === ESTILOS PARA FOTOS (ESTILO TARJETA) === */
 .photos-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -489,16 +545,30 @@ onMounted(() => {
 }
 
 .photo-item {
-  position: relative;
   aspect-ratio: 1;
   border-radius: 8px;
   overflow: hidden;
 }
 
-.photo-item img {
+.photo-card-link {
+  display: block;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.photo-card-link img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.3s;
+}
+
+.photo-card-link:hover img {
+  transform: scale(1.05); /* Zoom al pasar el mouse */
 }
 
 .photo-info {
@@ -509,17 +579,14 @@ onMounted(() => {
   background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
   padding: 1rem;
   color: white;
+  pointer-events: none; /* Los clicks pasan a traves de esto hacia el link */
 }
 
-.photo-info a {
-  color: white;
-  text-decoration: none;
+.photo-info span {
+  font-weight: 500;
 }
 
-.photo-info a:hover {
-  text-decoration: underline;
-}
-
+/* OTROS ESTILOS */
 .no-content {
   text-align: center;
   color: #7f8c8d;
