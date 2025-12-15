@@ -90,18 +90,54 @@
       <!-- Consulta #4: Valoraciones Inusuales -->
       <div class="stat-card">
         <h2>⚠️ Consulta #4: Valoraciones Inusuales</h2>
-        <p class="description">Sitios con alta calificación (>4.5) pero pocas reseñas (<10)</p>
+        <p class="description">Sitios con alta calificación (>4.5) pero pocas reseñas (menor a 10)</p>
 
         <div v-if="unusualRatings.length > 0" class="site-list">
-          <div v-for="site in unusualRatings" :key="site.nombre" class="site-item">
+          
+          <div 
+            v-for="site in (showAllUnusual ? unusualRatings : unusualRatings.slice(0, 5))" 
+            :key="site.nombre" 
+            class="site-item"
+          >
             <div class="site-name">{{ site.nombre }}</div>
             <div class="site-stats">
               <span class="rating">⭐ {{ site.calificacionPromedio?.toFixed(1) }}</span>
               <span class="count">{{ site.totalreseñas }} reseñas</span>
             </div>
           </div>
+
+          <div v-if="unusualRatings.length > 5" class="toggle-container">
+            <button @click="showAllUnusual = !showAllUnusual" class="btn-toggle">
+              {{ showAllUnusual ? '▲ Ver menos' : '▼ Ver todos (' + unusualRatings.length + ')' }}
+            </button>
+          </div>
+
         </div>
         <p v-else class="no-data">No hay sitios con estas características</p>
+      </div>
+
+      <!-- Consulta #5: Análisis de Popularidad por Región -->
+      <div class="stat-card">
+        <h2>🌍 Consulta #5: Popularidad por Región</h2>
+        <p class="description">Total de reseñas agrupadas por ciudad</p>
+
+        <div v-if="popularityByRegion.length > 0" class="data-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Región/Ciudad</th>
+                <th>Total Reseñas</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(stat, index) in popularityByRegion" :key="index">
+                <td class="name-cell">{{ stat.region }}</td>
+                <td class="count-cell">{{ stat.totalResenas }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p v-else class="no-data">No hay datos por región</p>
       </div>
 
       <!-- Consulta #7: Pocas Contribuciones -->
@@ -147,29 +183,7 @@
         <p v-else class="no-data">No hay reseñas disponibles</p>
       </div>
 
-      <!-- Consulta #5: Análisis de Popularidad por Región -->
-      <div class="stat-card">
-        <h2>🌍 Consulta #5: Popularidad por Región</h2>
-        <p class="description">Total de reseñas agrupadas por ciudad</p>
-
-        <div v-if="popularityByRegion.length > 0" class="data-table">
-          <table>
-            <thead>
-              <tr>
-                <th>Región/Ciudad</th>
-                <th>Total Reseñas</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(stat, index) in popularityByRegion" :key="index">
-                <td class="name-cell">{{ stat.region }}</td>
-                <td class="count-cell">{{ stat.totalResenas }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <p v-else class="no-data">No hay datos por región</p>
-      </div>
+  
 
       <!-- Consulta #9: Resumen de Contribuciones -->
       <div class="stat-card full-width">
@@ -213,6 +227,8 @@ import { statisticsService } from '@/services/statisticsService'
 import Navbar from '@/components/layout/Navbar.vue'
 import ErrorMessage from '@/components/common/ErrorMessage.vue'
 
+
+
 const statsByType = ref([])
 const topReviewers = ref([])
 const proximityAnalysis = ref([])
@@ -221,6 +237,8 @@ const lowContribution = ref([])
 const longestReviews = ref([])
 const contributionsSummary = ref([])
 const popularityByRegion = ref([])
+
+const showAllUnusual = ref(false)
 
 const loading = ref(false)
 const error = ref(null)
@@ -279,6 +297,31 @@ onMounted(() => {
 </script>
 
 <style scoped>
+
+.toggle-container {
+  text-align: center;
+  margin-top: 1rem;
+  padding-top: 0.5rem;
+  border-top: 1px dashed #ecf0f1;
+}
+
+.btn-toggle {
+  background: none;
+  border: 1px solid #bdc3c7;
+  color: #7f8c8d;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.btn-toggle:hover {
+  background: #ecf0f1;
+  color: #2c3e50;
+  border-color: #95a5a6;
+}
+
 .statistics-view {
   min-height: 100vh;
   background-color: #f8f9fa;
