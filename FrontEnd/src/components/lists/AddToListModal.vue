@@ -137,7 +137,6 @@ const handleAddToList = async () => {
     await listsStore.addSiteToList(selectedListId.value, props.siteId)
     successMessage.value = '✅ Sitio agregado a la lista exitosamente'
 
-    // Cerrar el modal después de 1.5 segundos
     setTimeout(() => {
       emit('added')
       emit('close')

@@ -9,7 +9,7 @@ export const statisticsService = {
   },
 
   async getTopReviewers() {
-    const response = await api.get('/estadisticas/top-resenadores')
+    const response = await api.get('/estadisticas/top-reseñadores')
     return response.data
   },
 
@@ -29,7 +29,7 @@ export const statisticsService = {
   },
 
   async getLongestReviews() {
-    const response = await api.get('/estadisticas/resenas-largas')
+    const response = await api.get('/estadisticas/reseñas-largas')
     return response.data
   },
 

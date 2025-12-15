@@ -24,7 +24,6 @@ public class SitioTuristicoService {
     }
 
     public Long create(SitioTuristicoRequest sitio) {
-        // (Aquí podrías agregar validaciones, ej. que el nombre no esté vacío)
         return repository.create(sitio);
     }
 

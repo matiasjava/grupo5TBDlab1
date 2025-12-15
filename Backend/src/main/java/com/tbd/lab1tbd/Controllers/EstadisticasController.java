@@ -34,7 +34,7 @@ public class EstadisticasController {
      * GET /api/estadisticas/top-resenadores
      * Consulta #2: Top 5 reseñadores más activos (últimos 6 meses).
      */
-    @GetMapping("/top-resenadores")
+    @GetMapping("/top-reseñadores")
     public ResponseEntity<List<TopResenadorResponse>> obtenerTopResenadores() {
         return ResponseEntity.ok(service.obtenerTopResenadores());
     }

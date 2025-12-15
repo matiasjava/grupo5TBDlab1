@@ -5,7 +5,7 @@
 SELECT
     tipo,
     AVG(calificacion_promedio) AS calificacion_promedio_general,
-    SUM(total_resenas) AS total_resenas_general
+    SUM(total_reseñas) AS total_reseñas_general
 FROM
     sitios_turisticos
 GROUP BY
@@ -31,7 +31,7 @@ FROM
 JOIN 
     usuarios u ON rr.id_usuario = u.id
 ORDER BY 
-    rr.conteo_reseñas DESC,
+    rr.conteo_reseñas DESC
 LIMIT 5;
 
 -- Consulta 3: Análisis de Proximidad (Restaurantes a < 100m de un Teatro).
@@ -52,18 +52,18 @@ WHERE
 SELECT
     nombre,
     calificacion_promedio,
-    total_resenas
+    total_reseñas
 FROM
     sitios_turisticos
 WHERE
     calificacion_promedio > 4.5
-    AND total_resenas < 10;
+    AND total_reseñas < 10;
 
 -- Consulta 5: Análisis de Popularidad por Región.
 
 SELECT
     ciudad,
-    SUM(total_resenas) AS total_resenas_por_ciudad
+    SUM(total_reseñas) AS total_resenas_por_ciudad
 FROM
     sitios_turisticos
 WHERE

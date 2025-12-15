@@ -1,5 +1,5 @@
 -- =============================================
--- SCRIPT DE LIMPIEZA Y RECARGA
+-- SCRIPT DE LIMPIEZA Y RECARGA (SIN LOGS)
 -- =============================================
 
 -- =============================================
@@ -15,9 +15,6 @@ BEGIN
     ) THEN
         CREATE UNIQUE INDEX idx_resumen_contribuciones_usuario_id
         ON resumen_contribuciones_usuario(id_usuario);
-        RAISE NOTICE 'Indice único creado';
-    ELSE
-        RAISE NOTICE 'Indice único ya existe';
     END IF;
 END $$;
 
@@ -25,30 +22,12 @@ END $$;
 -- ELIMINAR TODOS LOS DATOS
 -- =============================================
 
-RAISE NOTICE 'Eliminando todos los datos existentes...';
-
 -- Usar TRUNCATE CASCADE para eliminar TODO
 TRUNCATE TABLE lista_sitios CASCADE;
 TRUNCATE TABLE listas_personalizadas CASCADE;
 TRUNCATE TABLE fotografias CASCADE;
 TRUNCATE TABLE seguidores CASCADE;
-
--- Para resenas, verificar si existe la tabla
-DO $$
-BEGIN
-    -- Intentar truncar con el nombre con ñ
-    EXECUTE 'TRUNCATE TABLE resenas CASCADE';
-EXCEPTION
-    WHEN undefined_table THEN
-        -- Si no existe, intentar sin ñ
-        BEGIN
-            EXECUTE 'TRUNCATE TABLE resenas CASCADE';
-        EXCEPTION
-            WHEN undefined_table THEN
-                RAISE NOTICE 'No se encontró tabla de resenas';
-        END;
-END $$;
-
+TRUNCATE TABLE reseñas CASCADE;
 TRUNCATE TABLE sitios_turisticos RESTART IDENTITY CASCADE;
 TRUNCATE TABLE usuarios RESTART IDENTITY CASCADE;
 
@@ -66,10 +45,10 @@ BEGIN
         ALTER SEQUENCE seguidores_id_seq RESTART WITH 1;
     EXCEPTION
         WHEN undefined_table THEN
-            RAISE NOTICE 'Secuencia seguidores no existe';
+            NULL;
     END;
 
-    -- Intentar resetear resenas con ñ
+    -- Intentar resetear resenas
     BEGIN
         EXECUTE 'ALTER SEQUENCE resenas_id_seq RESTART WITH 1';
     EXCEPTION
@@ -78,18 +57,15 @@ BEGIN
                 EXECUTE 'ALTER SEQUENCE resenas_id_seq RESTART WITH 1';
             EXCEPTION
                 WHEN undefined_table THEN
-                    RAISE NOTICE 'Secuencia resenas no encontrada';
+                    NULL;
             END;
     END;
 END $$;
 
-RAISE NOTICE 'Datos eliminados correctamente';
 
-
+-- =============================================
 -- INSERTAR USUARIOS
-
-
-RAISE NOTICE 'Insertando usuarios...';
+-- =============================================
 
 INSERT INTO usuarios (nombre, email, contrasena_hash, biografia, fecha_registro) VALUES
 ('Ana Garcia', 'ana@tbd.cl', '$2a$10$eA95nPuWcZ.TC7KA5i1OveQ/FJzUTssTaRrJbcmGzPijoIWY8F.O2', 'Viajera y fotografa. Amante de los museos y el arte.', '2024-01-15 10:30:00'),
@@ -104,10 +80,9 @@ INSERT INTO usuarios (nombre, email, contrasena_hash, biografia, fecha_registro)
 ('Javier Pinto', 'javier@tbd.cl', '$2a$10$eA95nPuWcZ.TC7KA5i1OveQ/FJzUTssTaRrJbcmGzPijoIWY8F.O2', 'Estudiante de fotografia. Capturando la esencia de la ciudad.', '2024-10-01 08:30:00');
 
 
+-- =============================================
 -- INSERTAR SITIOS TURISTICOS
-
-
-RAISE NOTICE 'Insertando sitios turisticos...';
+-- =============================================
 
 ALTER TABLE sitios_turisticos ADD COLUMN IF NOT EXISTS ciudad VARCHAR(100);
 
@@ -151,22 +126,16 @@ INSERT INTO sitios_turisticos (nombre, descripcion, tipo, coordenadas, ciudad) V
 
 -- Bares
 ('The Clinic', 'Bar con terraza y buena seleccion de cervezas.', 'Bar', ST_SetSRID(ST_MakePoint(-70.6365, -33.4330), 4326), 'Santiago'),
-('La Piojera', 'Bar tradicional, famoso por la terremoto.', 'Bar', ST_SetSRID(ST_MakePoint(-70.6600, -33.4500), 4326), 'Santiago'),
-('La Joya Escondida', 'Museo oculto', 'Museo', ST_SetSRID(ST_MakePoint(-70.6600, -33.4500), 4326), 'Santiago'),
+('La Piojera', 'Bar tradicional, famoso por la terremoto.', 'Bar', ST_SetSRID(ST_MakePoint(-70.6600, -33.4500), 4326), 'Santiago');
 
 
-('Teatro Experimental', 'Teatro de prueba', 'Teatro', ST_SetSRID(ST_MakePoint(-70.6500, -33.4400), 4326), 'Santiago'),
-('Restaurante El Vecino', 'Restaurante pegado al teatro', 'Restaurante', ST_SetSRID(ST_MakePoint(-70.6501, -33.4400), 4326), 'Santiago');
-
+-- =============================================
 -- INSERTAR RESENAS (calificaciones ALTAS)
+-- =============================================
 
-
-RAISE NOTICE 'Insertando resenas...';
-
--- Insertar en la tabla correcta (con o sin ñ)
 DO $$
 BEGIN
-    -- Intentar insertar en tabla con ñ
+    -- Intentar insertar en tabla con ñ o sin ñ dinámicamente
     BEGIN
         INSERT INTO reseñas (id_usuario, id_sitio, contenido, calificacion, fecha) VALUES
         -- Ana Garcia (ID 1)
@@ -175,95 +144,70 @@ BEGIN
         (1, 19, 'La Moneda es espectacular. El cambio de guardia es muy interesante.', 4, NOW() - INTERVAL '15 days'),
         (1, 15, 'Bocanariz tiene la mejor seleccion de vinos.', 5, NOW() - INTERVAL '7 days'),
         (1, 9, 'Asisti a una opera en el Teatro Municipal. La acustica es perfecta.', 5, NOW() - INTERVAL '20 days'),
-
         -- Bruno Diaz (ID 2)
         (2, 15, 'La mejor seleccion de vinos que he visto en Santiago.', 5, NOW() - INTERVAL '3 days'),
         (2, 16, 'Liguria tiene ese ambiente bohemio que me encanta.', 4, NOW() - INTERVAL '8 days'),
         (2, 17, 'Peumayen ofrece una experiencia unica.', 5, NOW() - INTERVAL '12 days'),
         (2, 18, 'Astrid y Gaston no decepciona. Alta cocina peruana.', 5, NOW() - INTERVAL '6 days'),
         (2, 22, 'Cafe Colmado tiene los mejores pasteles de la zona.', 4, NOW() - INTERVAL '2 days'),
-
         -- Carla Soto (ID 3)
         (3, 1, 'Perfecto para un picnic el fin de semana.', 5, NOW() - INTERVAL '4 days'),
         (3, 2, 'El Parque Forestal es ideal para caminar.', 5, NOW() - INTERVAL '9 days'),
         (3, 3, 'Parque Bicentenario es moderno y bien mantenido.', 4, NOW() - INTERVAL '14 days'),
         (3, 4, 'Quinta Normal tiene mucho espacio verde.', 4, NOW() - INTERVAL '11 days'),
         (3, 20, 'La Plaza de Armas siempre esta llena de vida.', 4, NOW() - INTERVAL '18 days'),
-
         -- Diego Morales (ID 4)
         (4, 9, 'El Teatro Municipal es joya arquitectonica.', 5, NOW() - INTERVAL '7 days'),
         (4, 10, 'Teatro Universidad de Chile tiene una rica historia.', 5, NOW() - INTERVAL '13 days'),
         (4, 11, 'GAM es un espacio moderno y versatil.', 5, NOW() - INTERVAL '19 days'),
         (4, 12, 'Opera Catedral es perfecto para comer antes de la funcion.', 4, NOW() - INTERVAL '8 days'),
         (4, 13, 'Confiteria Torres es un clasico santiaguino.', 4, NOW() - INTERVAL '15 days'),
-
         -- Elena Fernandez (ID 5)
         (5, 19, 'La Moneda tiene tanta historia. Recomiendo el tour guiado.', 5, NOW() - INTERVAL '5 days'),
         (5, 20, 'Plaza de Armas es el corazon de Santiago.', 5, NOW() - INTERVAL '10 days'),
         (5, 21, 'La Catedral Metropolitana es impresionante.', 5, NOW() - INTERVAL '15 days'),
         (5, 7, 'El Museo Precolombino tiene piezas unicas.', 5, NOW() - INTERVAL '8 days'),
         (5, 6, 'Museo de la Memoria es conmovedor y necesario.', 5, NOW() - INTERVAL '20 days'),
-
         -- Felipe Torres (ID 6)
         (6, 15, 'Bocanariz es mi lugar favorito. La carta de vinos es excelente.', 5, NOW() - INTERVAL '2 days'),
         (6, 17, 'Peumayen tiene un maridaje perfecto.', 5, NOW() - INTERVAL '6 days'),
         (6, 18, 'La bodega de Astrid y Gaston es impresionante.', 5, NOW() - INTERVAL '12 days'),
         (6, 12, 'Opera Catedral tiene una carta de vinos sorprendente.', 4, NOW() - INTERVAL '16 days'),
-
         -- Gabriela Rojas (ID 7)
         (7, 9, 'La arquitectura del Teatro Municipal es sublime.', 5, NOW() - INTERVAL '4 days'),
         (7, 5, 'El Palacio de Bellas Artes es una joya arquitectonica.', 5, NOW() - INTERVAL '9 days'),
         (7, 21, 'La fachada neoclasica de la Catedral es impresionante.', 5, NOW() - INTERVAL '14 days'),
         (7, 8, 'El Centro Cultural La Moneda tiene un diseno subterraneo fascinante.', 5, NOW() - INTERVAL '11 days'),
         (7, 11, 'GAM representa la arquitectura contemporanea chilena.', 5, NOW() - INTERVAL '18 days'),
-
         -- Hector Vargas (ID 8)
         (8, 1, 'Subir el San Cristobal en bici es un desafio.', 5, NOW() - INTERVAL '3 days'),
         (8, 2, 'Parque Forestal tiene buenas ciclovias.', 5, NOW() - INTERVAL '7 days'),
         (8, 3, 'Bicentenario es perfecto para andar en bici con la familia.', 5, NOW() - INTERVAL '13 days'),
         (8, 4, 'Quinta Normal tiene rutas ciclisticas amplias y seguras.', 4, NOW() - INTERVAL '17 days'),
-
         -- Isabel Nunez (ID 9)
         (9, 1, 'El Cerro San Cristobal es el mejor mirador de Santiago.', 5, NOW() - INTERVAL '1 day'),
         (9, 15, 'Bocanariz es perfecto para una cita romantica.', 5, NOW() - INTERVAL '5 days'),
         (9, 9, 'Asistir al Teatro Municipal es una experiencia de lujo.', 5, NOW() - INTERVAL '10 days'),
         (9, 22, 'Cafe Colmado es instagrameable y delicioso.', 5, NOW() - INTERVAL '3 days'),
         (9, 23, 'Wonderland Cafe tiene una decoracion de cuento.', 5, NOW() - INTERVAL '8 days'),
-
         -- Javier Pinto (ID 10)
         (10, 1, 'Las mejores fotos de Santiago se toman desde aqui.', 5, NOW() - INTERVAL '2 days'),
         (10, 2, 'Parque Forestal es fotogenico en cada estacion.', 5, NOW() - INTERVAL '6 days'),
         (10, 5, 'El interior del Museo de Bellas Artes es un sueno para fotografos.', 5, NOW() - INTERVAL '11 days'),
         (10, 20, 'Plaza de Armas tiene mucha vida urbana.', 5, NOW() - INTERVAL '15 days'),
         (10, 21, 'La Catedral tiene detalles arquitectonicos increibles.', 5, NOW() - INTERVAL '9 days'),
-
         -- Mas resenas para cafes y bares
         (2, 22, 'El cafe es excelente y los pasteles caseros son increibles.', 5, NOW() - INTERVAL '4 days'),
         (3, 23, 'Wonderland es magico, perfecto para una tarde con amigas.', 5, NOW() - INTERVAL '6 days'),
         (6, 24, 'The Clinic tiene buena seleccion de cervezas artesanales.', 4, NOW() - INTERVAL '8 days'),
         (1, 14, 'Cafe del Teatro es ideal para conversar despues de la funcion.', 4, NOW() - INTERVAL '12 days'),
-
         -- Resena antigua para consulta #7
         (1, 25, 'Experiencia autentica en La Piojera. Muy tradicional.', 3, NOW() - INTERVAL '120 days');
-
-
-        INSERT INTO reseñas (id_usuario, id_sitio, contenido, calificacion, fecha)
-        SELECT 1, id, '¡Espectacular!', 5, NOW() FROM sitios_turisticos WHERE nombre = 'La Joya Escondida';
-
-
-        -- Reseña GIGANTE para asegurar Consulta #8 (>1000 caracteres)
-        INSERT INTO reseñas (id_usuario, id_sitio, contenido, calificacion, fecha) VALUES 
-        (1, 1, 'Esta es una reseña extremadamente larga diseñada especificamente para aparecer en la consulta numero ocho del laboratorio. El lugar es absolutamente maravilloso y la experiencia fue inolvidable. Recomiendo encarecidamente visitar este sitio a cualquier persona que quiera conocer lo mejor de Santiago en profundidad. La atencion fue excelente, la comida deliciosa y el ambiente inigualable. Volvere sin duda alguna. ' ||
-               'Repito: Esta es una reseña extremadamente larga diseñada especificamente para aparecer en la consulta numero ocho del laboratorio. El lugar es absolutamente maravilloso y la experiencia fue inolvidable. Recomiendo encarecidamente visitar este sitio a cualquier persona que quiera conocer lo mejor de Santiago en profundidad. ' ||
-               'Una vez mas: Esta es una reseña extremadamente larga diseñada especificamente para aparecer en la consulta numero ocho del laboratorio. El lugar es absolutamente maravilloso y la experiencia fue inolvidable. Recomiendo encarecidamente visitar este sitio a cualquier persona que quiera conocer lo mejor de Santiago en profundidad.', 5, NOW());
-    
-        
-       
 
     EXCEPTION
         WHEN undefined_table THEN
             -- Si no existe con ñ, intentar sin ñ
-            INSERT INTO resenas (id_usuario, id_sitio, contenido, calificacion, fecha) VALUES
+            INSERT INTO reseñas (id_usuario, id_sitio, contenido, calificacion, fecha) VALUES
             (1, 1, 'La vista desde el Cerro San Cristobal es increible!', 5, NOW() - INTERVAL '5 days'),
             (1, 5, 'El Museo de Bellas Artes tiene una coleccion impresionante.', 5, NOW() - INTERVAL '10 days'),
             (1, 19, 'La Moneda es espectacular.', 4, NOW() - INTERVAL '15 days'),
@@ -317,18 +261,13 @@ BEGIN
             (6, 24, 'The Clinic tiene cervezas artesanales.', 4, NOW() - INTERVAL '8 days'),
             (1, 14, 'Cafe del Teatro es ideal.', 4, NOW() - INTERVAL '12 days'),
             (1, 25, 'La Piojera es tradicional.', 3, NOW() - INTERVAL '120 days');
-
-            INSERT INTO reseñas (id_usuario, id_sitio, contenido, calificacion, fecha)
-            SELECT 1, id, '¡Espectacular! Una joya oculta.', 5, NOW() 
-            FROM sitios_turisticos WHERE nombre = 'La Joya Escondida';
     END;
 END $$;
 
 
+-- =============================================
 -- INSERTAR FOTOGRAFIAS
-
-
-RAISE NOTICE 'Insertando fotografias...';
+-- =============================================
 
 INSERT INTO fotografias (id_usuario, id_sitio, url, fecha) VALUES
 (1, 1, 'https://picsum.photos/800/600?random=1', NOW() - INTERVAL '5 days'),
@@ -363,10 +302,9 @@ INSERT INTO fotografias (id_usuario, id_sitio, url, fecha) VALUES
 (9, 23, 'https://picsum.photos/800/600?random=30', NOW() - INTERVAL '8 days');
 
 
+-- =============================================
 -- INSERTAR SEGUIDORES
-
-
-RAISE NOTICE 'Insertando seguidores...';
+-- =============================================
 
 INSERT INTO seguidores (id_seguidor, id_seguido, fecha_inicio) VALUES
 (1, 2, '2024-02-25 10:00:00'),
@@ -397,10 +335,9 @@ INSERT INTO seguidores (id_seguidor, id_seguido, fecha_inicio) VALUES
 (10, 9, '2024-10-20 15:00:00');
 
 
+-- =============================================
 -- INSERTAR LISTAS
-
-
-RAISE NOTICE 'Insertando listas personalizadas...';
+-- =============================================
 
 INSERT INTO listas_personalizadas (id_usuario, nombre, fecha_creacion) VALUES
 (1, 'Imperdibles de Santiago', '2024-02-01 10:00:00'),
@@ -414,10 +351,8 @@ INSERT INTO listas_personalizadas (id_usuario, nombre, fecha_creacion) VALUES
 (10, 'Fotogenico Santiago', '2024-10-05 18:00:00');
 
 -- =============================================
--- PASO 8: VINCULAR SITIOS A LISTAS
+-- VINCULAR SITIOS A LISTAS
 -- =============================================
-
-RAISE NOTICE 'Vinculando sitios a listas...';
 
 INSERT INTO lista_sitios (id_lista, id_sitio) VALUES
 (1, 1), (1, 5), (1, 19), (1, 20), (1, 9),
@@ -431,123 +366,19 @@ INSERT INTO lista_sitios (id_lista, id_sitio) VALUES
 (9, 1), (9, 2), (9, 5), (9, 20), (9, 21);
 
 
+-- =============================================
 -- REFRESCAR VISTA MATERIALIZADA
-
-
-RAISE NOTICE 'Refrescando vista materializada...';
+-- =============================================
 
 REFRESH MATERIALIZED VIEW CONCURRENTLY resumen_contribuciones_usuario;
 
+-- =============================================
+-- MOSTRAR USUARIOS MAS ACTIVOS
+-- =============================================
 
--- VERIFICACION
-
-
-
--- 1. Actualizar contadores de Sitios Turísticos (Para Consulta #1)
-UPDATE sitios_turisticos s
-SET 
-    total_reseñas = (SELECT COUNT(*) FROM reseñas r WHERE r.id_sitio = s.id),
-    calificacion_promedio = COALESCE((SELECT AVG(calificacion) FROM reseñas r WHERE r.id_sitio = s.id), 0);
-
--- 2. Asegurar que las reseñas largas sean visibles (Para Consulta #8)
-DO $$
-BEGIN
-    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'usuarios' AND column_name = 'calificacion_promedio') THEN
-         UPDATE usuarios u
-         SET calificacion_promedio = (SELECT AVG(calificacion) FROM reseñas r WHERE r.id_usuario = u.id);
-    END IF;
-END $$;
-
-DO $$
-DECLARE
-    v_usuarios INT;
-    v_sitios INT;
-    v_resenas INT;
-    v_fotos INT;
-    v_seguidores INT;
-    v_listas INT;
-    v_sitios_cerca INT;
-BEGIN
-    SELECT COUNT(*) INTO v_usuarios FROM usuarios;
-    SELECT COUNT(*) INTO v_sitios FROM sitios_turisticos;
-
-    -- Contar resenas
-    BEGIN
-        EXECUTE 'SELECT COUNT(*) FROM reseñas' INTO v_resenas;
-    EXCEPTION
-        WHEN undefined_table THEN
-            EXECUTE 'SELECT COUNT(*) FROM resenas' INTO v_resenas;
-    END;
-
-    SELECT COUNT(*) INTO v_fotos FROM fotografias;
-    SELECT COUNT(*) INTO v_seguidores FROM seguidores;
-    SELECT COUNT(*) INTO v_listas FROM listas_personalizadas;
-
-    -- Verificar sitios cercanos
-    SELECT COUNT(*) INTO v_sitios_cerca
-    FROM sitios_turisticos r
-    WHERE r.tipo = 'Restaurante'
-    AND EXISTS (
-        SELECT 1 FROM sitios_turisticos t
-        WHERE t.tipo = 'Teatro'
-        AND ST_DWithin(r.coordenadas, t.coordenadas, 100)
-    );
-
-    RAISE NOTICE '';
-    RAISE NOTICE '==========================================';
-    RAISE NOTICE 'RESUMEN DE DATOS CARGADOS';
-    RAISE NOTICE '==========================================';
-    RAISE NOTICE 'Usuarios:                    %', v_usuarios;
-    RAISE NOTICE 'Sitios turisticos:           %', v_sitios;
-    RAISE NOTICE 'Resenas:                     %', v_resenas;
-    RAISE NOTICE 'Fotografias:                 %', v_fotos;
-    RAISE NOTICE 'Relaciones seguimiento:      %', v_seguidores;
-    RAISE NOTICE 'Listas personalizadas:       %', v_listas;
-    RAISE NOTICE 'Restaurantes cerca teatros:  %', v_sitios_cerca;
-    RAISE NOTICE '==========================================';
-    RAISE NOTICE '';
-
-    IF v_usuarios < 10 THEN
-        RAISE WARNING 'Se esperaban 10 usuarios, encontrados: %', v_usuarios;
-    END IF;
-
-    IF v_sitios_cerca = 0 THEN
-        RAISE WARNING 'No hay restaurantes cerca de teatros!';
-    ELSE
-        RAISE NOTICE 'OK: % restaurantes cerca de teatros', v_sitios_cerca;
-    END IF;
-
-    RAISE NOTICE 'Datos cargados correctamente';
-    RAISE NOTICE '';
-END $$;
-
--- Mostrar calificaciones promedio por tipo
-DO $$
-BEGIN
-    BEGIN
-        RAISE NOTICE 'Calificaciones promedio por tipo:';
-        EXECUTE $sql$
-            SELECT tipo, ROUND(AVG(calificacion_promedio)::numeric, 2) AS promedio, SUM(total_reseñas) AS total
-            FROM sitios_turisticos
-            WHERE total_reseñas > 0
-            GROUP BY tipo
-            ORDER BY promedio DESC
-        $sql$;
-    EXCEPTION
-        WHEN undefined_column THEN
-           
-            RAISE NOTICE 'No se pudo generar el reporte final de promedios, pero los datos estan cargados.';
-    END;
-END $$;
-
-
---  Refrescamos la vista una ultima vez para que el resumen 
-REFRESH MATERIALIZED VIEW resumen_contribuciones_usuario;
-
--- Mostrar usuarios mas activos
 SELECT
     nombre,
-    total_reseñas AS resenas, 
+    total_reseñas AS reseñas,
     total_fotos AS fotos,
     total_listas AS listas,
     (total_reseñas + total_fotos + total_listas) AS total

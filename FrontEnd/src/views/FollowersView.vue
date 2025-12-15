@@ -85,7 +85,7 @@ const authStore = useAuthStore()
 
 const userId = ref(null)
 const userName = ref('')
-const mode = ref('followers') // 'followers' or 'following'
+const mode = ref('followers')
 const users = ref([])
 const stats = ref({})
 const loading = ref(false)
@@ -156,11 +156,10 @@ onMounted(() => {
   userId.value = parseInt(route.params.id) || currentUserId.value
   mode.value = route.query.mode || 'followers'
 
-  // Obtener nombre del usuario (simplificado, podrías hacer una llamada a la API)
   if (userId.value === currentUserId.value) {
     userName.value = authStore.user?.nombre || 'Tu perfil'
   } else {
-    userName.value = '' // Se podría obtener de la API
+    userName.value = ''
   }
 
   loadData()
