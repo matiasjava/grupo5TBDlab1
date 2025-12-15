@@ -38,7 +38,7 @@
               <tr v-for="stat in statsByType" :key="stat.tipo">
                 <td class="type-cell">{{ stat.tipo }}</td>
                 <td class="rating-cell">{{ stat.calificacionPromedioGeneral?.toFixed(2) || 'N/A' }} ⭐</td>
-                <td class="count-cell">{{ stat.totalResenasGeneral || 0 }}</td>
+                <td class="count-cell">{{ stat.totalreseñasGeneral || 0 }}</td>
               </tr>
             </tbody>
           </table>
@@ -190,11 +190,11 @@
             <tbody>
               <tr v-for="user in contributionsSummary" :key="user.idUsuario">
                 <td class="name-cell">{{ user.nombre }}</td>
-                <td class="count-cell">{{ user.totalResenas || 0 }}</td>
-                <td class="count-cell">{{ user.totalFotos || 0 }}</td>
-                <td class="count-cell">{{ user.totalListas || 0 }}</td>
+                <td class="count-cell">{{ user.totalreseñas || 0 }}</td>
+                <td class="count-cell">{{ user.totalfotografias || 0 }}</td>
+                <td class="count-cell">{{ user.totallistas || 0 }}</td>
                 <td class="total-cell">
-                  {{ (user.totalResenas || 0) + (user.totalFotos || 0) + (user.totalListas || 0) }}
+                  {{ (user.totalreseñas || 0) + (user.totalfotografias || 0) + (user.totallistas || 0) }}
                 </td>
               </tr>
             </tbody>

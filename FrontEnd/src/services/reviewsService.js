@@ -2,7 +2,7 @@ import api from './api'
 
 export const reviewsService = {
   async getAll() {
-    const response = await api.get('/resenas')
+    const response = await api.get('/reseñas')
     return response.data
   },
 
@@ -12,7 +12,7 @@ export const reviewsService = {
   },
 
   async getByUserId(userId) {
-    const response = await api.get(`/resenas/usuario/${userId}`)
+    const response = await api.get(`/reseñas/usuario/${userId}`)
     return response.data
   },
 
@@ -28,7 +28,7 @@ export const reviewsService = {
   },
 
   async delete(id) {
-    const response = await api.delete(`/reseñas/${id}`)
+    const response = await api.delete(`/reseñas/${id}`, reviewData)
     return response.data
   }
 }

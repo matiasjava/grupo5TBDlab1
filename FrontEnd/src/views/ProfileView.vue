@@ -213,8 +213,20 @@ const loadFollowersStats = async () => {
 const loadProfile = async () => {
   loading.value = true
   try {
+    if (!currentUser.value) {
+      router.push('/login')
+      return
+    }
+
     // Obtener ID del perfil a mostrar
     const userId = route.params.id ? parseInt(route.params.id) : currentUser.value?.id
+    
+    if (!userId) {
+      console.error('No se pudo obtener el ID del usuario')
+      router.push('/login')
+      return
+    }
+
     profileUserId.value = userId
 
     // Si es perfil propio, usar datos del authStore
@@ -226,13 +238,26 @@ const loadProfile = async () => {
       profileUser.value = userData
     }
 
-    // Cargar datos del usuario
-    await Promise.all([
-      reviewsStore.fetchByUserId(userId),
-      photosStore.fetchByUserId(userId),
-      listsStore.fetchByUserId(userId),
-      loadFollowersStats()
-    ])
+    
+    try {
+      await Promise.all([
+        reviewsStore.fetchByUserId(userId).catch(err => {
+          console.error('Error cargando reseñas:', err)
+          return [] 
+        }),
+        photosStore.fetchByUserId(userId).catch(err => {
+          console.error('Error cargando fotos:', err)
+          return [] 
+        }),
+        listsStore.fetchByUserId(userId).catch(err => {
+          console.error('Error cargando listas:', err)
+          return [] 
+        }),
+        loadFollowersStats()
+      ])
+    } catch (err) {
+      console.error('Error en carga paralela:', err)
+    }
 
     stats.value = {
       totalResenas: reviews.value.length,
@@ -241,10 +266,25 @@ const loadProfile = async () => {
     }
   } catch (error) {
     console.error('Error al cargar perfil:', error)
+    if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+      router.push('/login')
+    }
   } finally {
     loading.value = false
   }
 }
+watch(activeTab, async (newTab) => {
+  if (newTab === 'reviews' && profileUserId.value) {
+    await reviewsStore.fetchByUserId(profileUserId.value)
+    stats.value.totalResenas = reviews.value.length
+  } else if (newTab === 'photos' && profileUserId.value) {
+    await photosStore.fetchByUserId(profileUserId.value)
+    stats.value.totalFotos = photos.value.length
+  } else if (newTab === 'lists' && profileUserId.value) {
+    await listsStore.fetchByUserId(profileUserId.value)
+    stats.value.totalListas = listsStore.lists.length
+  }
+})
 
 // Watch para recargar cuando cambie el parámetro de ruta
 watch(() => route.params.id, () => {
