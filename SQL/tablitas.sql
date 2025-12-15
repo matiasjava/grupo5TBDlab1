@@ -2,6 +2,7 @@
 -- Limpieza (opcional, pero útil para re-ejecutar el script)
 -- Se eliminan en orden inverso a la creación para evitar errores de FK.
 -- -----------------------------------------------------
+DROP TABLE IF EXISTS seguidores CASCADE; -- Agregada para limpieza de la nueva tabla
 DROP TABLE IF EXISTS lista_sitios CASCADE;
 DROP TABLE IF EXISTS listas_personalizadas CASCADE;
 DROP TABLE IF EXISTS fotografias CASCADE;
@@ -28,6 +29,37 @@ CREATE TABLE usuarios (
     biografia TEXT,
     fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- -----------------------------------------------------
+-- Tabla 1.5: seguidores (NUEVA TABLA AGREGADA)
+-- Funcionalidad de red social: usuarios pueden seguir a otros usuarios
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS seguidores (
+    id SERIAL PRIMARY KEY,
+    id_seguidor INT NOT NULL,       -- Usuario que sigue (follower)
+    id_seguido INT NOT NULL,        -- Usuario que es seguido (following)
+    fecha_inicio TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    -- Claves foráneas
+    FOREIGN KEY (id_seguidor) REFERENCES usuarios(id) ON DELETE CASCADE,
+    FOREIGN KEY (id_seguido) REFERENCES usuarios(id) ON DELETE CASCADE,
+
+    -- Restricción: Un usuario no puede seguirse a sí mismo
+    CHECK (id_seguidor != id_seguido),
+
+    -- Restricción: No puede haber relaciones duplicadas
+    UNIQUE (id_seguidor, id_seguido)
+);
+
+-- Crear índices para optimizar consultas de seguidores
+CREATE INDEX IF NOT EXISTS idx_seguidores_seguidor ON seguidores(id_seguidor);
+CREATE INDEX IF NOT EXISTS idx_seguidores_seguido ON seguidores(id_seguido);
+
+-- Comentarios para documentación
+COMMENT ON TABLE seguidores IS 'Relación de seguimiento entre usuarios (funcionalidad de red social)';
+COMMENT ON COLUMN seguidores.id_seguidor IS 'ID del usuario que está siguiendo (follower)';
+COMMENT ON COLUMN seguidores.id_seguido IS 'ID del usuario que es seguido (following)';
+COMMENT ON COLUMN seguidores.fecha_inicio IS 'Fecha y hora en que se inició el seguimiento';
 
 -- -----------------------------------------------------
 -- Tabla 2: sitios_turisticos
@@ -262,8 +294,3 @@ BEGIN
         );
 END;
 $$ LANGUAGE plpgsql;
-
--- -----------------------------------------------------
--- Fin del Script de Procedimiento Almacenado
--- -----------------------------------------------------
-

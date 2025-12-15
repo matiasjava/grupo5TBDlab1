@@ -1,177 +1,174 @@
 <template>
-  <div class="profile-view">
+  <div class="site-detail-view">
     <Navbar />
 
-    <div class="container">
-      <LoadingSpinner v-if="loading" message="Cargando perfil..." />
+    <LoadingSpinner v-if="loading" message="Cargando sitio..." />
 
-      <div v-else class="profile-content">
-        <div class="profile-header">
-          <div class="profile-avatar">
-            {{ userInitial }}
+    <div v-else-if="site" class="container">
+      <div class="site-header">
+        <div class="site-info">
+          <h1>{{ site.nombre }}</h1>
+          <div class="site-meta">
+            <span class="site-type">{{ site.tipo }}</span>
+            <RatingStars :rating="site.calificacionPromedio || 0" />
           </div>
-          <div class="profile-info">
-            <h1>{{ profileUser?.nombre }}</h1>
-            <p class="profile-email">{{ profileUser?.email }}</p>
-            <p v-if="profileUser?.biografia" class="profile-bio">{{ profileUser.biografia }}</p>
-            <p v-else class="profile-bio-empty">Sin biografía</p>
-          </div>
+        </div>
+        <div class="site-actions">
+          <button @click="addToList" class="btn-action">+ Agregar a lista</button>
           <button
-            v-if="isOwnProfile"
-            @click="showEditProfile = true"
-            class="btn-edit-profile"
+            v-if="isAuthenticated"
+            @click="editSite"
+            class="btn-edit"
           >
-            ✏️ Editar Perfil
+            ✏️ Editar
           </button>
-          <FollowButton
-            v-else
-            :user-id="profileUserId"
-            @follow-changed="onFollowChanged"
-          />
-        </div>
-
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-number">{{ stats.totalResenas }}</div>
-            <div class="stat-label">Reseñas</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-number">{{ stats.totalFotos }}</div>
-            <div class="stat-label">Fotos</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-number">{{ stats.totalListas }}</div>
-            <div class="stat-label">Listas</div>
-          </div>
-          <div class="stat-card clickable" @click="viewFollowers">
-            <div class="stat-number">{{ followersStats.totalSeguidores || 0 }}</div>
-            <div class="stat-label">Seguidores</div>
-          </div>
-          <div class="stat-card clickable" @click="viewFollowing">
-            <div class="stat-number">{{ followersStats.totalSiguiendo || 0 }}</div>
-            <div class="stat-label">Siguiendo</div>
-          </div>
-        </div>
-
-        <div class="tabs">
           <button
-            v-for="tab in tabs"
-            :key="tab.id"
-            @click="activeTab = tab.id"
-            class="tab-button"
-            :class="{ active: activeTab === tab.id }"
+            v-if="isAuthenticated"
+            @click="deleteSite"
+            class="btn-delete"
           >
-            {{ tab.label }}
+            🗑️ Eliminar
           </button>
         </div>
+      </div>
 
-        <div class="tab-content">
-          <div v-if="activeTab === 'reviews'" class="reviews-list">
-            <h2>Mis Reseñas</h2>
-            <div v-if="reviews.length > 0" class="content-grid">
-              <div v-for="review in reviews" :key="review.id" class="review-item">
-                <router-link :to="`/sitios/${review.sitioId}`" class="item-link">
-                  <h3>{{ review.sitioNombre }}</h3>
-                </router-link>
-                <RatingStars :rating="review.calificacion" :show-value="false" />
-                <p>{{ review.contenido }}</p>
-                <small>{{ formatDate(review.fecha) }}</small>
-              </div>
-            </div>
-            <p v-else class="no-content">No has escrito reseñas aún.</p>
-          </div>
-
-          <div v-if="activeTab === 'photos'" class="photos-list">
-            <h2>Mis Fotografías</h2>
+      <div class="site-content">
+        <div class="main-content">
+          <section class="photos-section">
+            <h2>Fotografías</h2>
             <div v-if="photos.length > 0" class="photos-grid">
-              <div v-for="photo in photos" :key="photo.id" class="photo-item">
-                <img :src="photo.url" :alt="photo.sitioNombre" />
-                <div class="photo-info">
-                  <router-link :to="`/sitios/${photo.sitioId}`">
-                    {{ photo.sitioNombre }}
-                  </router-link>
-                </div>
-              </div>
+              <PhotoCard
+                v-for="photo in photos"
+                :key="photo.id"
+                :photo="photo"
+                @delete="handleDeletePhoto"
+              />
             </div>
-            <p v-else class="no-content">No has subido fotografías aún.</p>
-          </div>
+            <p v-else class="no-content">No hay fotografías aún.</p>
+            <button
+              v-if="isAuthenticated"
+              @click="showUploadPhoto = true"
+              class="btn-secondary"
+            >
+              Subir Foto
+            </button>
+          </section>
 
-          <div v-if="activeTab === 'lists'" class="lists-section">
-            <h2>Mis Listas</h2>
-            <router-link to="/mis-listas" class="btn-primary">
-              Ver todas mis listas
-            </router-link>
-          </div>
+          <section class="description-section">
+            <h2>Descripción</h2>
+            <p>{{ site.descripcion }}</p>
+          </section>
+
+          <section class="reviews-section">
+            <div class="reviews-header">
+              <h2>Reseñas ({{ reviews.length }})</h2>
+              <button
+                v-if="isAuthenticated"
+                @click="showCreateReview = true"
+                class="btn-primary"
+              >
+                Escribir Reseña
+              </button>
+            </div>
+
+            <div v-if="reviews.length > 0" class="reviews-list">
+              <ReviewCard
+                v-for="review in reviews"
+                :key="review.id"
+                :review="review"
+                @edit="handleEditReview"
+                @delete="handleDeleteReview"
+              />
+            </div>
+            <p v-else class="no-content">No hay reseñas aún. Sé el primero en dejar una.</p>
+          </section>
         </div>
+
+        <aside class="sidebar">
+          <div class="info-card">
+            <h3>Ubicación</h3>
+            <p v-if="site.latitud && site.longitud" class="coordinates">
+              <strong>Latitud:</strong> {{ site.latitud }}<br />
+              <strong>Longitud:</strong> {{ site.longitud }}
+            </p>
+            <p v-else class="no-coordinates">
+              Coordenadas no disponibles
+            </p>
+            <div class="map-preview">
+              <p>Vista previa del mapa</p>
+              <p class="map-placeholder-text">El mapa se mostrará aquí en futuras versiones</p>
+            </div>
+          </div>
+        </aside>
       </div>
     </div>
 
-    <ProfileEditForm
-      v-if="showEditProfile"
-      :user="currentUser"
-      @close="showEditProfile = false"
-      @updated="onProfileUpdated"
+    <ReviewForm
+      v-if="showCreateReview"
+      :site-id="siteId"
+      @close="showCreateReview = false"
+      @created="onReviewCreated"
+    />
+
+    <ReviewEditForm
+      v-if="showEditReview"
+      :review="editingReview"
+      @close="showEditReview = false"
+      @updated="onReviewUpdated"
+    />
+
+    <PhotoUpload
+      v-if="showUploadPhoto"
+      :site-id="siteId"
+      @close="showUploadPhoto = false"
+      @uploaded="onPhotoUploaded"
+    />
+
+    <AddToListModal
+      v-if="showAddToList"
+      :site-id="siteId"
+      @close="showAddToList = false"
+      @added="showAddToList = false"
     />
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
+import { ref, computed, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useSitesStore } from '@/stores/sites'
 import { useReviewsStore } from '@/stores/reviews'
 import { usePhotosStore } from '@/stores/photos'
-import { useListsStore } from '@/stores/lists'
-import { followersService } from '@/services/followersService'
-import { userService } from '@/services/userService'
+import { useAuthStore } from '@/stores/auth'
 import Navbar from '@/components/layout/Navbar.vue'
 import RatingStars from '@/components/common/RatingStars.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
-import ProfileEditForm from '@/components/profile/ProfileEditForm.vue'
-import FollowButton from '@/components/profile/FollowButton.vue'
+import ReviewForm from '@/components/reviews/ReviewForm.vue'
+import ReviewEditForm from '@/components/reviews/ReviewEditForm.vue'
+import ReviewCard from '@/components/reviews/ReviewCard.vue'
+import PhotoUpload from '@/components/photos/PhotoUpload.vue'
+import PhotoCard from '@/components/photos/PhotoCard.vue'
+import AddToListModal from '@/components/lists/AddToListModal.vue'
 
-const router = useRouter()
 const route = useRoute()
-const authStore = useAuthStore()
+const router = useRouter()
+const sitesStore = useSitesStore()
 const reviewsStore = useReviewsStore()
 const photosStore = usePhotosStore()
-const listsStore = useListsStore()
+const authStore = useAuthStore()
 
-const currentUser = computed(() => authStore.user)
+const siteId = computed(() => route.params.id)
+const site = computed(() => sitesStore.currentSite)
 const reviews = computed(() => reviewsStore.reviews)
 const photos = computed(() => photosStore.photos)
+const isAuthenticated = computed(() => authStore.isAuthenticated)
 
 const loading = ref(false)
-const activeTab = ref('reviews')
-const showEditProfile = ref(false)
-const profileUser = ref(null)
-const profileUserId = ref(null)
-
-const isOwnProfile = computed(() => {
-  if (!profileUserId.value || !currentUser.value) return true
-  return profileUserId.value === currentUser.value.id
-})
-
-const stats = ref({
-  totalResenas: 0,
-  totalFotos: 0,
-  totalListas: 0
-})
-
-const followersStats = ref({
-  totalSeguidores: 0,
-  totalSiguiendo: 0
-})
-
-const tabs = [
-  { id: 'reviews', label: 'Reseñas' },
-  { id: 'photos', label: 'Fotografías' },
-  { id: 'lists', label: 'Listas' }
-]
-
-const userInitial = computed(() => {
-  return profileUser.value?.nombre?.charAt(0).toUpperCase() || 'U'
-})
+const showCreateReview = ref(false)
+const showEditReview = ref(false)
+const showUploadPhoto = ref(false)
+const showAddToList = ref(false)
+const editingReview = ref(null)
 
 const formatDate = (dateString) => {
   const date = new Date(dateString)
@@ -182,124 +179,86 @@ const formatDate = (dateString) => {
   })
 }
 
-const onProfileUpdated = () => {
-  showEditProfile.value = false
-  // El perfil ya está actualizado en authStore por ProfileEditForm
-  profileUser.value = { ...currentUser.value }
+const addToList = () => {
+  if (!isAuthenticated.value) {
+    alert('Debes iniciar sesión para agregar sitios a listas')
+    return
+  }
+  showAddToList.value = true
 }
 
-const onFollowChanged = () => {
-  // Recargar estadísticas cuando cambia el seguimiento
-  loadFollowersStats()
+const editSite = () => {
+  router.push(`/sitios/${siteId.value}/editar`)
 }
 
-const viewFollowers = () => {
-  router.push(`/perfil/${profileUserId.value}/seguidores?mode=followers`)
-}
+const deleteSite = async () => {
+  if (!confirm('¿Estás seguro de eliminar este sitio? Esta acción no se puede deshacer y eliminará también todas sus reseñas y fotos.')) {
+    return
+  }
 
-const viewFollowing = () => {
-  router.push(`/perfil/${profileUserId.value}/seguidores?mode=following`)
-}
-
-const loadFollowersStats = async () => {
   try {
-    const data = await followersService.getStats(profileUserId.value)
-    followersStats.value = data
+    await sitesStore.deleteSite(siteId.value)
+    alert('Sitio eliminado exitosamente')
+    router.push('/sitios')
   } catch (error) {
-    console.error('Error al cargar estadísticas de seguidores:', error)
+    alert('Error al eliminar el sitio')
   }
 }
 
-const loadProfile = async () => {
+const handleEditReview = (review) => {
+  editingReview.value = review
+  showEditReview.value = true
+}
+
+const handleDeleteReview = async (reviewId) => {
+  try {
+    await reviewsStore.deleteReview(reviewId)
+    await reviewsStore.fetchBySiteId(siteId.value)
+  } catch (error) {
+    alert('Error al eliminar la reseña')
+  }
+}
+
+const handleDeletePhoto = async (photoId) => {
+  try {
+    await photosStore.deletePhoto(photoId)
+    await photosStore.fetchBySiteId(siteId.value)
+  } catch (error) {
+    alert('Error al eliminar la fotografía')
+  }
+}
+
+const onReviewCreated = async () => {
+  showCreateReview.value = false
+  await reviewsStore.fetchBySiteId(siteId.value)
+}
+
+const onReviewUpdated = async () => {
+  showEditReview.value = false
+  await reviewsStore.fetchBySiteId(siteId.value)
+}
+
+const onPhotoUploaded = async () => {
+  showUploadPhoto.value = false
+  await photosStore.fetchBySiteId(siteId.value)
+}
+
+onMounted(async () => {
   loading.value = true
   try {
-    if (!currentUser.value) {
-      router.push('/login')
-      return
-    }
-
-    // Obtener ID del perfil a mostrar
-    const userId = route.params.id ? parseInt(route.params.id) : currentUser.value?.id
-    
-    if (!userId) {
-      console.error('No se pudo obtener el ID del usuario')
-      router.push('/login')
-      return
-    }
-
-    profileUserId.value = userId
-
-    // Si es perfil propio, usar datos del authStore
-    if (isOwnProfile.value) {
-      profileUser.value = { ...currentUser.value }
-    } else {
-      // Si es perfil de otro usuario, cargar desde API
-      const userData = await userService.getUserById(userId)
-      profileUser.value = userData
-    }
-
-    
-    try {
-      await Promise.all([
-        reviewsStore.fetchByUserId(userId).catch(err => {
-          console.error('Error cargando reseñas:', err)
-          return [] 
-        }),
-        photosStore.fetchByUserId(userId).catch(err => {
-          console.error('Error cargando fotos:', err)
-          return [] 
-        }),
-        listsStore.fetchByUserId(userId).catch(err => {
-          console.error('Error cargando listas:', err)
-          return [] 
-        }),
-        loadFollowersStats()
-      ])
-    } catch (err) {
-      console.error('Error en carga paralela:', err)
-    }
-
-    stats.value = {
-      totalResenas: reviews.value.length,
-      totalFotos: photos.value.length,
-      totalListas: listsStore.lists.length
-    }
-  } catch (error) {
-    console.error('Error al cargar perfil:', error)
-    if (error.response && (error.response.status === 401 || error.response.status === 403)) {
-      router.push('/login')
-    }
+    await Promise.all([
+      sitesStore.fetchById(siteId.value),
+      reviewsStore.fetchBySiteId(siteId.value),
+      photosStore.fetchBySiteId(siteId.value)
+    ])
   } finally {
     loading.value = false
   }
-}
-watch(activeTab, async (newTab) => {
-  if (newTab === 'reviews' && profileUserId.value) {
-    await reviewsStore.fetchByUserId(profileUserId.value)
-    stats.value.totalResenas = reviews.value.length
-  } else if (newTab === 'photos' && profileUserId.value) {
-    await photosStore.fetchByUserId(profileUserId.value)
-    stats.value.totalFotos = photos.value.length
-  } else if (newTab === 'lists' && profileUserId.value) {
-    await listsStore.fetchByUserId(profileUserId.value)
-    stats.value.totalListas = listsStore.lists.length
-  }
-})
-
-// Watch para recargar cuando cambie el parámetro de ruta
-watch(() => route.params.id, () => {
-  if (route.name === 'profile' || route.name === 'user-profile') {
-    loadProfile()
-  }
-})
-
-onMounted(() => {
-  loadProfile()
 })
 </script>
 
 <style scoped>
-.profile-view {
+.site-detail-view {
   min-height: 100vh;
   background-color: #f8f9fa;
   padding-bottom: 3rem;
@@ -311,248 +270,213 @@ onMounted(() => {
   padding: 2rem;
 }
 
-.profile-header {
+.site-header {
   background-color: white;
   padding: 2rem;
   border-radius: 8px;
-  display: flex;
-  gap: 2rem;
-  align-items: center;
   margin-bottom: 2rem;
-}
-
-.profile-avatar {
-  width: 100px;
-  height: 100px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 2.5rem;
-  font-weight: bold;
+  justify-content: space-between;
+  align-items: flex-start;
 }
 
-.profile-info h1 {
-  margin: 0 0 0.5rem 0;
+.site-info h1 {
+  margin: 0 0 1rem 0;
   color: #2c3e50;
 }
 
-.profile-email {
-  color: #7f8c8d;
-  margin: 0 0 0.5rem 0;
+.site-meta {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
 }
 
-.profile-bio {
-  color: #34495e;
-  margin: 0;
+.site-type {
+  background-color: #3498db;
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
 }
 
-.profile-bio-empty {
-  color: #95a5a6;
-  font-style: italic;
-  margin: 0;
+.site-actions {
+  display: flex;
+  gap: 1rem;
 }
 
-.btn-edit-profile {
+.btn-action {
   background-color: #3498db;
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
   border-radius: 6px;
   cursor: pointer;
-  font-size: 0.95rem;
-  font-weight: 500;
+  font-size: 1rem;
   transition: background-color 0.3s;
-  white-space: nowrap;
-  margin-left: auto;
 }
 
-.btn-edit-profile:hover {
+.btn-action:hover {
   background-color: #2980b9;
 }
 
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 1rem;
-  margin-bottom: 2rem;
-}
-
-.stat-card {
-  background-color: white;
-  padding: 1.5rem;
-  border-radius: 8px;
-  text-align: center;
-  transition: all 0.3s;
-}
-
-.stat-card.clickable {
-  cursor: pointer;
-}
-
-.stat-card.clickable:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  background-color: #f8f9fa;
-}
-
-.stat-number {
-  font-size: 2.5rem;
-  font-weight: bold;
-  color: #3498db;
-  margin-bottom: 0.5rem;
-}
-
-.stat-label {
-  color: #7f8c8d;
-  font-size: 0.9rem;
-}
-
-.tabs {
-  background-color: white;
-  padding: 1rem;
-  border-radius: 8px 8px 0 0;
-  display: flex;
-  gap: 0.5rem;
-}
-
-.tab-button {
-  padding: 0.75rem 1.5rem;
-  border: none;
-  background: none;
-  cursor: pointer;
-  color: #7f8c8d;
-  font-weight: 500;
-  border-radius: 4px;
-  transition: background-color 0.3s, color 0.3s;
-}
-
-.tab-button.active {
-  background-color: #3498db;
+.btn-edit {
+  background-color: #f39c12;
   color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.3s;
 }
 
-.tab-button:hover:not(.active) {
-  background-color: #ecf0f1;
+.btn-edit:hover {
+  background-color: #e67e22;
 }
 
-.tab-content {
+.btn-delete {
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.3s;
+}
+
+.btn-delete:hover {
+  background-color: #c0392b;
+}
+
+.site-content {
+  display: grid;
+  grid-template-columns: 1fr 350px;
+  gap: 2rem;
+}
+
+.main-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+section {
   background-color: white;
   padding: 2rem;
-  border-radius: 0 0 8px 8px;
+  border-radius: 8px;
 }
 
-.tab-content h2 {
+section h2 {
   margin: 0 0 1.5rem 0;
   color: #2c3e50;
 }
 
-.content-grid {
-  display: grid;
-  gap: 1rem;
-}
-
-.review-item {
-  border: 1px solid #e0e0e0;
-  padding: 1rem;
-  border-radius: 6px;
-}
-
-.item-link {
-  text-decoration: none;
-  color: #3498db;
-}
-
-.item-link:hover {
-  text-decoration: underline;
-}
-
-.review-item h3 {
-  margin: 0 0 0.5rem 0;
-}
-
-.review-item p {
-  margin: 0.5rem 0;
-  color: #34495e;
-}
-
-.review-item small {
-  color: #95a5a6;
-}
-
 .photos-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 1rem;
 }
 
-.photo-item {
-  position: relative;
-  aspect-ratio: 1;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.photo-item img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.photo-info {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
-  padding: 1rem;
+.btn-primary,
+.btn-secondary {
+  background-color: #27ae60;
   color: white;
-}
-
-.photo-info a {
-  color: white;
-  text-decoration: none;
-}
-
-.photo-info a:hover {
-  text-decoration: underline;
-}
-
-.no-content {
-  text-align: center;
-  color: #7f8c8d;
-  padding: 2rem;
-}
-
-.btn-primary {
-  display: inline-block;
-  background-color: #3498db;
-  color: white;
+  border: none;
   padding: 0.75rem 1.5rem;
   border-radius: 6px;
-  text-decoration: none;
-  font-weight: 600;
+  cursor: pointer;
+  font-size: 1rem;
   transition: background-color 0.3s;
 }
 
-.btn-primary:hover {
-  background-color: #2980b9;
+.btn-secondary {
+  background-color: #95a5a6;
 }
 
-@media (max-width: 768px) {
-  .profile-header {
-    flex-direction: column;
-    text-align: center;
-  }
+.btn-primary:hover {
+  background-color: #229954;
+}
 
-  .stats-grid {
+.btn-secondary:hover {
+  background-color: #7f8c8d;
+}
+
+.reviews-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  overflow-wrap: break-word;
+}
+
+.reviews-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+
+  overflow-wrap: break-word;
+}
+
+.no-content {
+  color: #7f8c8d;
+  text-align: center;
+  padding: 2rem 0;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.info-card {
+  background-color: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+}
+
+.info-card h3 {
+  margin: 0 0 1rem 0;
+  color: #2c3e50;
+}
+
+.coordinates {
+  color: #2c3e50;
+  line-height: 1.8;
+  margin: 0 0 1rem 0;
+}
+
+.no-coordinates {
+  color: #95a5a6;
+  font-style: italic;
+  margin: 0 0 1rem 0;
+}
+
+.map-preview {
+  background-color: #ecf0f1;
+  border: 2px dashed #bdc3c7;
+  border-radius: 6px;
+  padding: 2rem;
+  text-align: center;
+  margin-top: 1rem;
+}
+
+.map-placeholder-text {
+  color: #7f8c8d;
+  font-size: 0.9rem;
+  margin: 0.5rem 0 0 0;
+}
+
+@media (max-width: 968px) {
+  .site-content {
     grid-template-columns: 1fr;
   }
 
-  .tabs {
+  .site-header {
     flex-direction: column;
+    gap: 1rem;
   }
 }
 </style>
