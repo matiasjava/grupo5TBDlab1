@@ -39,7 +39,9 @@ public class SecurityConfig {
                         // Permitimos el acceso PÚBLICO a los endpoints de autenticación (login y registro)
                         .requestMatchers("/auth/**").permitAll()
 
-                        // Permitimos el método OPTIONS de CORS (pre-flight)
+                        .requestMatchers("/api/estadisticas/**").permitAll()
+
+                        // Permitimos el metodo
                         .requestMatchers(HttpMethod.OPTIONS).permitAll()
 
                         // CUALQUIER OTRA petición requiere autenticación

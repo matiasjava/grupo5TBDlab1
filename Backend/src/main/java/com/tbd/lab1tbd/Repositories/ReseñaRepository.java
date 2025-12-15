@@ -134,4 +134,17 @@ public class ReseñaRepository {
             return Optional.empty();
         }
     }
+
+    /**
+     * CONSULTA #8: Reseñas más largas de usuarios con buen promedio.
+     * Filtra usuarios con promedio > 4.0 y ordena por largo del contenido.
+     */
+    public List<ReseñaResponse> findLongestReviews() {
+        String sql = SELECT_SQL +
+                "WHERE u.calificacion_promedio > 4.0 " +
+                "ORDER BY LENGTH(r.contenido) DESC " +
+                "LIMIT 3";
+
+        return jdbc.query(sql, RESPONSE_MAPPER);
+    }
 }
