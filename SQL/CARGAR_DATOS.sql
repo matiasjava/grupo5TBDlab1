@@ -151,8 +151,12 @@ INSERT INTO sitios_turisticos (nombre, descripcion, tipo, coordenadas, ciudad) V
 
 -- Bares
 ('The Clinic', 'Bar con terraza y buena seleccion de cervezas.', 'Bar', ST_SetSRID(ST_MakePoint(-70.6365, -33.4330), 4326), 'Santiago'),
-('La Piojera', 'Bar tradicional, famoso por la terremoto.', 'Bar', ST_SetSRID(ST_MakePoint(-70.6600, -33.4500), 4326), 'Santiago');
+('La Piojera', 'Bar tradicional, famoso por la terremoto.', 'Bar', ST_SetSRID(ST_MakePoint(-70.6600, -33.4500), 4326), 'Santiago'),
+('La Joya Escondida', 'Museo oculto', 'Museo', ST_SetSRID(ST_MakePoint(-70.6600, -33.4500), 4326), 'Santiago'),
 
+
+('Teatro Experimental', 'Teatro de prueba', 'Teatro', ST_SetSRID(ST_MakePoint(-70.6500, -33.4400), 4326), 'Santiago'),
+('Restaurante El Vecino', 'Restaurante pegado al teatro', 'Restaurante', ST_SetSRID(ST_MakePoint(-70.6501, -33.4400), 4326), 'Santiago');
 
 -- INSERTAR RESENAS (calificaciones ALTAS)
 
@@ -164,7 +168,7 @@ DO $$
 BEGIN
     -- Intentar insertar en tabla con ñ
     BEGIN
-        INSERT INTO resenas (id_usuario, id_sitio, contenido, calificacion, fecha) VALUES
+        INSERT INTO reseñas (id_usuario, id_sitio, contenido, calificacion, fecha) VALUES
         -- Ana Garcia (ID 1)
         (1, 1, 'La vista desde el Cerro San Cristobal es increible!', 5, NOW() - INTERVAL '5 days'),
         (1, 5, 'El Museo de Bellas Artes tiene una coleccion impresionante.', 5, NOW() - INTERVAL '10 days'),
@@ -242,6 +246,20 @@ BEGIN
         -- Resena antigua para consulta #7
         (1, 25, 'Experiencia autentica en La Piojera. Muy tradicional.', 3, NOW() - INTERVAL '120 days');
 
+
+        INSERT INTO reseñas (id_usuario, id_sitio, contenido, calificacion, fecha)
+        SELECT 1, id, '¡Espectacular!', 5, NOW() FROM sitios_turisticos WHERE nombre = 'La Joya Escondida';
+
+
+        -- Reseña GIGANTE para asegurar Consulta #8 (>1000 caracteres)
+        INSERT INTO reseñas (id_usuario, id_sitio, contenido, calificacion, fecha) VALUES 
+        (1, 1, 'Esta es una reseña extremadamente larga diseñada especificamente para aparecer en la consulta numero ocho del laboratorio. El lugar es absolutamente maravilloso y la experiencia fue inolvidable. Recomiendo encarecidamente visitar este sitio a cualquier persona que quiera conocer lo mejor de Santiago en profundidad. La atencion fue excelente, la comida deliciosa y el ambiente inigualable. Volvere sin duda alguna. ' ||
+               'Repito: Esta es una reseña extremadamente larga diseñada especificamente para aparecer en la consulta numero ocho del laboratorio. El lugar es absolutamente maravilloso y la experiencia fue inolvidable. Recomiendo encarecidamente visitar este sitio a cualquier persona que quiera conocer lo mejor de Santiago en profundidad. ' ||
+               'Una vez mas: Esta es una reseña extremadamente larga diseñada especificamente para aparecer en la consulta numero ocho del laboratorio. El lugar es absolutamente maravilloso y la experiencia fue inolvidable. Recomiendo encarecidamente visitar este sitio a cualquier persona que quiera conocer lo mejor de Santiago en profundidad.', 5, NOW());
+    
+        
+       
+
     EXCEPTION
         WHEN undefined_table THEN
             -- Si no existe con ñ, intentar sin ñ
@@ -299,6 +317,10 @@ BEGIN
             (6, 24, 'The Clinic tiene cervezas artesanales.', 4, NOW() - INTERVAL '8 days'),
             (1, 14, 'Cafe del Teatro es ideal.', 4, NOW() - INTERVAL '12 days'),
             (1, 25, 'La Piojera es tradicional.', 3, NOW() - INTERVAL '120 days');
+
+            INSERT INTO reseñas (id_usuario, id_sitio, contenido, calificacion, fecha)
+            SELECT 1, id, '¡Espectacular! Una joya oculta.', 5, NOW() 
+            FROM sitios_turisticos WHERE nombre = 'La Joya Escondida';
     END;
 END $$;
 
@@ -420,6 +442,22 @@ REFRESH MATERIALIZED VIEW CONCURRENTLY resumen_contribuciones_usuario;
 -- VERIFICACION
 
 
+
+-- 1. Actualizar contadores de Sitios Turísticos (Para Consulta #1)
+UPDATE sitios_turisticos s
+SET 
+    total_reseñas = (SELECT COUNT(*) FROM reseñas r WHERE r.id_sitio = s.id),
+    calificacion_promedio = COALESCE((SELECT AVG(calificacion) FROM reseñas r WHERE r.id_sitio = s.id), 0);
+
+-- 2. Asegurar que las reseñas largas sean visibles (Para Consulta #8)
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'usuarios' AND column_name = 'calificacion_promedio') THEN
+         UPDATE usuarios u
+         SET calificacion_promedio = (SELECT AVG(calificacion) FROM reseñas r WHERE r.id_usuario = u.id);
+    END IF;
+END $$;
+
 DO $$
 DECLARE
     v_usuarios INT;
@@ -435,7 +473,7 @@ BEGIN
 
     -- Contar resenas
     BEGIN
-        EXECUTE 'SELECT COUNT(*) FROM resenas' INTO v_resenas;
+        EXECUTE 'SELECT COUNT(*) FROM reseñas' INTO v_resenas;
     EXCEPTION
         WHEN undefined_table THEN
             EXECUTE 'SELECT COUNT(*) FROM resenas' INTO v_resenas;
@@ -489,31 +527,30 @@ BEGIN
     BEGIN
         RAISE NOTICE 'Calificaciones promedio por tipo:';
         EXECUTE $sql$
-            SELECT tipo, ROUND(AVG(calificacion_promedio)::numeric, 2) AS promedio, SUM(total_resenas) AS total
+            SELECT tipo, ROUND(AVG(calificacion_promedio)::numeric, 2) AS promedio, SUM(total_reseñas) AS total
             FROM sitios_turisticos
-            WHERE total_resenas > 0
+            WHERE total_reseñas > 0
             GROUP BY tipo
             ORDER BY promedio DESC
         $sql$;
     EXCEPTION
         WHEN undefined_column THEN
-            EXECUTE $sql$
-                SELECT tipo, ROUND(AVG(calificacion_promedio)::numeric, 2) AS promedio, SUM(total_resenas) AS total
-                FROM sitios_turisticos
-                WHERE total_resenas > 0
-                GROUP BY tipo
-                ORDER BY promedio DESC
-            $sql$;
+           
+            RAISE NOTICE 'No se pudo generar el reporte final de promedios, pero los datos estan cargados.';
     END;
 END $$;
+
+
+--  Refrescamos la vista una ultima vez para que el resumen 
+REFRESH MATERIALIZED VIEW resumen_contribuciones_usuario;
 
 -- Mostrar usuarios mas activos
 SELECT
     nombre,
-    total_resenas AS resenas,
+    total_reseñas AS resenas, 
     total_fotos AS fotos,
     total_listas AS listas,
-    (total_resenas + total_fotos + total_listas) AS total
+    (total_reseñas + total_fotos + total_listas) AS total
 FROM resumen_contribuciones_usuario
 ORDER BY total DESC
 LIMIT 10;
