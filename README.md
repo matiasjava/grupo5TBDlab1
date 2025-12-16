@@ -53,6 +53,15 @@ Requisitos Previos
 - Maven 3.6+ (incluido con Spring Boot)
 - Git
 
+Clonar repositorio:
+
+1. Abrir la Terminal (o CMD)
+2. Copiar la URL del Repositorio
+3. Navegar a la Carpeta donde Quieres Clonar el Repositorio
+   cd /ruta/a/tu/carpeta
+4. Clonar el repositorio 
+   git clone https://github.com/usuario/nombre-del-repositorio.git
+
 
 Configurar Base de Datos
 
