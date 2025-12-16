@@ -154,6 +154,9 @@ La aplicación estará disponible en: `http://localhost:5173`
 ---
 Usuarios de Prueba
 
+correo ana@tbd.cl
+correo bruno@tbd.cl
+
 Los datos de prueba incluyen 10 usuarios con contraseña `password123`:
 
 Contraseña para todos:password123
