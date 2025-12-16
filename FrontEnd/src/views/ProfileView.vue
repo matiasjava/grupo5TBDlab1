@@ -1,50 +1,70 @@
 <template>
-  <div class="site-detail-view">
+  <div class="profile-view">
     <Navbar />
 
-    <LoadingSpinner v-if="loading" message="Cargando sitio..." />
+    <div class="container">
+      <LoadingSpinner v-if="loading" message="Cargando perfil..." />
 
-    <div v-else-if="site" class="container">
-      <div class="site-header">
-        <div class="site-info">
-          <h1>{{ site.nombre }}</h1>
-          <div class="site-meta">
-            <span class="site-type">{{ site.tipo }}</span>
-            <RatingStars :rating="site.calificacionPromedio || 0" />
+      <div v-else class="profile-content">
+        <div class="profile-header">
+          <div class="profile-avatar">
+            {{ userInitial }}
+          </div>
+          <div class="profile-info">
+            <h1>{{ profileUser?.nombre }}</h1>
+            <p class="profile-email">{{ profileUser?.email }}</p>
+            <p v-if="profileUser?.biografia" class="profile-bio">{{ profileUser.biografia }}</p>
+            <p v-else class="profile-bio-empty">Sin biografía</p>
+          </div>
+          <button
+            v-if="isOwnProfile"
+            @click="showEditProfile = true"
+            class="btn-edit-profile"
+          >
+            ✏️ Editar Perfil
+          </button>
+          <FollowButton
+            v-else
+            :user-id="profileUserId"
+            @follow-changed="onFollowChanged"
+          />
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-number">{{ stats.totalResenas }}</div>
+            <div class="stat-label">Reseñas</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number">{{ stats.totalFotos }}</div>
+            <div class="stat-label">Fotos</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number">{{ stats.totalListas }}</div>
+            <div class="stat-label">Listas</div>
+          </div>
+          <div class="stat-card clickable" @click="viewFollowers">
+            <div class="stat-number">{{ followersStats.totalSeguidores || 0 }}</div>
+            <div class="stat-label">Seguidores</div>
+          </div>
+          <div class="stat-card clickable" @click="viewFollowing">
+            <div class="stat-number">{{ followersStats.totalSiguiendo || 0 }}</div>
+            <div class="stat-label">Siguiendo</div>
           </div>
         </div>
-        <div class="site-actions">
-          <button @click="addToList" class="btn-action">+ Agregar a lista</button>
+
+        <div class="tabs">
           <button
-            v-if="isAuthenticated"
-            @click="editSite"
-            class="btn-edit"
+            v-for="tab in tabs"
+            :key="tab.id"
+            @click="activeTab = tab.id"
+            class="tab-button"
+            :class="{ active: activeTab === tab.id }"
           >
-            ✏️ Editar
-          </button>
-          <button
-            v-if="isAuthenticated"
-            @click="deleteSite"
-            class="btn-delete"
-          >
-            🗑️ Eliminar
+            {{ tab.label }}
           </button>
         </div>
-      </div>
 
-<<<<<<< HEAD
-      <div class="site-content">
-        <div class="main-content">
-          <section class="photos-section">
-            <h2>Fotografías</h2>
-            <div v-if="photos.length > 0" class="photos-grid">
-              <PhotoCard
-                v-for="photo in photos"
-                :key="photo.id"
-                :photo="photo"
-                @delete="handleDeletePhoto"
-              />
-=======
         <div class="tab-content">
           
           <div v-if="activeTab === 'reviews'" class="reviews-list">
@@ -82,48 +102,10 @@
                   </div>
                 </router-link>
               </div>
->>>>>>> 53acc713ec245b19d7175bb3b89c31e063f395f2
             </div>
-            <p v-else class="no-content">No hay fotografías aún.</p>
-            <button
-              v-if="isAuthenticated"
-              @click="showUploadPhoto = true"
-              class="btn-secondary"
-            >
-              Subir Foto
-            </button>
-          </section>
+            <p v-else class="no-content">No has subido fotografías aún.</p>
+          </div>
 
-<<<<<<< HEAD
-          <section class="description-section">
-            <h2>Descripción</h2>
-            <p>{{ site.descripcion }}</p>
-          </section>
-
-          <section class="reviews-section">
-            <div class="reviews-header">
-              <h2>Reseñas ({{ reviews.length }})</h2>
-              <button
-                v-if="isAuthenticated"
-                @click="showCreateReview = true"
-                class="btn-primary"
-              >
-                Escribir Reseña
-              </button>
-            </div>
-
-            <div v-if="reviews.length > 0" class="reviews-list">
-              <ReviewCard
-                v-for="review in reviews"
-                :key="review.id"
-                :review="review"
-                @edit="handleEditReview"
-                @delete="handleDeleteReview"
-              />
-            </div>
-            <p v-else class="no-content">No hay reseñas aún. Sé el primero en dejar una.</p>
-          </section>
-=======
           <div v-if="activeTab === 'lists'" class="lists-section">
             <h2>Mis Listas</h2>
             <div v-if="listsStore.lists.length > 0">
@@ -138,94 +120,76 @@
                </router-link>
             </div>
           </div>
->>>>>>> 53acc713ec245b19d7175bb3b89c31e063f395f2
         </div>
-
-        <aside class="sidebar">
-          <div class="info-card">
-            <h3>Ubicación</h3>
-            <p v-if="site.latitud && site.longitud" class="coordinates">
-              <strong>Latitud:</strong> {{ site.latitud }}<br />
-              <strong>Longitud:</strong> {{ site.longitud }}
-            </p>
-            <p v-else class="no-coordinates">
-              Coordenadas no disponibles
-            </p>
-            <div class="map-preview">
-              <p>Vista previa del mapa</p>
-              <p class="map-placeholder-text">El mapa se mostrará aquí en futuras versiones</p>
-            </div>
-          </div>
-        </aside>
       </div>
     </div>
 
-    <ReviewForm
-      v-if="showCreateReview"
-      :site-id="siteId"
-      @close="showCreateReview = false"
-      @created="onReviewCreated"
-    />
-
-    <ReviewEditForm
-      v-if="showEditReview"
-      :review="editingReview"
-      @close="showEditReview = false"
-      @updated="onReviewUpdated"
-    />
-
-    <PhotoUpload
-      v-if="showUploadPhoto"
-      :site-id="siteId"
-      @close="showUploadPhoto = false"
-      @uploaded="onPhotoUploaded"
-    />
-
-    <AddToListModal
-      v-if="showAddToList"
-      :site-id="siteId"
-      @close="showAddToList = false"
-      @added="showAddToList = false"
+    <ProfileEditForm
+      v-if="showEditProfile"
+      :user="currentUser"
+      @close="showEditProfile = false"
+      @updated="onProfileUpdated"
     />
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { useSitesStore } from '@/stores/sites'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 import { useReviewsStore } from '@/stores/reviews'
 import { usePhotosStore } from '@/stores/photos'
-import { useAuthStore } from '@/stores/auth'
+import { useListsStore } from '@/stores/lists'
+import { followersService } from '@/services/followersService'
+import { userService } from '@/services/userService'
 import Navbar from '@/components/layout/Navbar.vue'
 import RatingStars from '@/components/common/RatingStars.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
-import ReviewForm from '@/components/reviews/ReviewForm.vue'
-import ReviewEditForm from '@/components/reviews/ReviewEditForm.vue'
-import ReviewCard from '@/components/reviews/ReviewCard.vue'
-import PhotoUpload from '@/components/photos/PhotoUpload.vue'
-import PhotoCard from '@/components/photos/PhotoCard.vue'
-import AddToListModal from '@/components/lists/AddToListModal.vue'
+import ProfileEditForm from '@/components/profile/ProfileEditForm.vue'
+import FollowButton from '@/components/profile/FollowButton.vue'
 
-const route = useRoute()
 const router = useRouter()
-const sitesStore = useSitesStore()
+const route = useRoute()
+const authStore = useAuthStore()
 const reviewsStore = useReviewsStore()
 const photosStore = usePhotosStore()
-const authStore = useAuthStore()
+const listsStore = useListsStore()
 
-const siteId = computed(() => route.params.id)
-const site = computed(() => sitesStore.currentSite)
+const currentUser = computed(() => authStore.user)
 const reviews = computed(() => reviewsStore.reviews)
 const photos = computed(() => photosStore.photos)
-const isAuthenticated = computed(() => authStore.isAuthenticated)
 
 const loading = ref(false)
-const showCreateReview = ref(false)
-const showEditReview = ref(false)
-const showUploadPhoto = ref(false)
-const showAddToList = ref(false)
-const editingReview = ref(null)
+const activeTab = ref('reviews')
+const showEditProfile = ref(false)
+const profileUser = ref(null)
+const profileUserId = ref(null)
+
+const isOwnProfile = computed(() => {
+  if (!profileUserId.value || !currentUser.value) return true
+  return profileUserId.value === currentUser.value.id
+})
+
+const stats = ref({
+  totalResenas: 0,
+  totalFotos: 0,
+  totalListas: 0
+})
+
+const followersStats = ref({
+  totalSeguidores: 0,
+  totalSiguiendo: 0
+})
+
+const tabs = [
+  { id: 'reviews', label: 'Reseñas' },
+  { id: 'photos', label: 'Fotografías' },
+  { id: 'lists', label: 'Listas' }
+]
+
+const userInitial = computed(() => {
+  return profileUser.value?.nombre?.charAt(0).toUpperCase() || 'U'
+})
 
 const formatDate = (dateString) => {
   const date = new Date(dateString)
@@ -236,18 +200,6 @@ const formatDate = (dateString) => {
   })
 }
 
-<<<<<<< HEAD
-const addToList = () => {
-  if (!isAuthenticated.value) {
-    alert('Debes iniciar sesión para agregar sitios a listas')
-    return
-  }
-  showAddToList.value = true
-}
-
-const editSite = () => {
-  router.push(`/sitios/${siteId.value}/editar`)
-=======
 const onProfileUpdated = () => {
   showEditProfile.value = false
   profileUser.value = { ...currentUser.value }
@@ -255,74 +207,28 @@ const onProfileUpdated = () => {
 
 const onFollowChanged = () => {
   loadFollowersStats()
->>>>>>> 53acc713ec245b19d7175bb3b89c31e063f395f2
 }
 
-const deleteSite = async () => {
-  if (!confirm('¿Estás seguro de eliminar este sitio? Esta acción no se puede deshacer y eliminará también todas sus reseñas y fotos.')) {
-    return
-  }
+const viewFollowers = () => {
+  router.push(`/perfil/${profileUserId.value}/seguidores?mode=followers`)
+}
 
+const viewFollowing = () => {
+  router.push(`/perfil/${profileUserId.value}/seguidores?mode=following`)
+}
+
+const loadFollowersStats = async () => {
   try {
-    await sitesStore.deleteSite(siteId.value)
-    alert('Sitio eliminado exitosamente')
-    router.push('/sitios')
+    const data = await followersService.getStats(profileUserId.value)
+    followersStats.value = data
   } catch (error) {
-    alert('Error al eliminar el sitio')
+    console.error('Error al cargar estadísticas de seguidores:', error)
   }
 }
 
-const handleEditReview = (review) => {
-  editingReview.value = review
-  showEditReview.value = true
-}
-
-const handleDeleteReview = async (reviewId) => {
-  try {
-    await reviewsStore.deleteReview(reviewId)
-    await reviewsStore.fetchBySiteId(siteId.value)
-  } catch (error) {
-    alert('Error al eliminar la reseña')
-  }
-}
-
-const handleDeletePhoto = async (photoId) => {
-  try {
-    await photosStore.deletePhoto(photoId)
-    await photosStore.fetchBySiteId(siteId.value)
-  } catch (error) {
-    alert('Error al eliminar la fotografía')
-  }
-}
-
-const onReviewCreated = async () => {
-  showCreateReview.value = false
-  await reviewsStore.fetchBySiteId(siteId.value)
-}
-
-const onReviewUpdated = async () => {
-  showEditReview.value = false
-  await reviewsStore.fetchBySiteId(siteId.value)
-}
-
-const onPhotoUploaded = async () => {
-  showUploadPhoto.value = false
-  await photosStore.fetchBySiteId(siteId.value)
-}
-
-onMounted(async () => {
+const loadProfile = async () => {
   loading.value = true
   try {
-<<<<<<< HEAD
-    await Promise.all([
-      sitesStore.fetchById(siteId.value),
-      reviewsStore.fetchBySiteId(siteId.value),
-      photosStore.fetchBySiteId(siteId.value)
-    ])
-  } finally {
-    loading.value = false
-  }
-=======
     if (!currentUser.value) {
       router.push('/login')
       return
@@ -403,17 +309,12 @@ watch(() => route.params.id, () => {
 
 onMounted(() => {
   loadProfile()
->>>>>>> 53acc713ec245b19d7175bb3b89c31e063f395f2
 })
 </script>
 
 <style scoped>
-<<<<<<< HEAD
-.site-detail-view {
-=======
 /* ESTILOS GENERALES */
 .profile-view {
->>>>>>> 53acc713ec245b19d7175bb3b89c31e063f395f2
   min-height: 100vh;
   background-color: #f8f9fa;
   padding-bottom: 3rem;
@@ -425,64 +326,69 @@ onMounted(() => {
   padding: 2rem;
 }
 
-<<<<<<< HEAD
-.site-header {
-=======
 /* HEADER DEL PERFIL */
 .profile-header {
->>>>>>> 53acc713ec245b19d7175bb3b89c31e063f395f2
   background-color: white;
   padding: 2rem;
   border-radius: 8px;
-  margin-bottom: 2rem;
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+  gap: 2rem;
+  align-items: center;
+  margin-bottom: 2rem;
 }
 
-.site-info h1 {
-  margin: 0 0 1rem 0;
+.profile-avatar {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  font-weight: bold;
+}
+
+.profile-info h1 {
+  margin: 0 0 0.5rem 0;
   color: #2c3e50;
 }
 
-.site-meta {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
+.profile-email {
+  color: #7f8c8d;
+  margin: 0 0 0.5rem 0;
 }
 
-.site-type {
-  background-color: #3498db;
-  color: white;
-  padding: 0.25rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.9rem;
+.profile-bio {
+  color: #34495e;
+  margin: 0;
 }
 
-.site-actions {
-  display: flex;
-  gap: 1rem;
+.profile-bio-empty {
+  color: #95a5a6;
+  font-style: italic;
+  margin: 0;
 }
 
-.btn-action {
+.btn-edit-profile {
   background-color: #3498db;
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
   border-radius: 6px;
   cursor: pointer;
-  font-size: 1rem;
+  font-size: 0.95rem;
+  font-weight: 500;
   transition: background-color 0.3s;
+  white-space: nowrap;
+  margin-left: auto;
 }
 
-.btn-action:hover {
+.btn-edit-profile:hover {
   background-color: #2980b9;
 }
 
-<<<<<<< HEAD
-.btn-edit {
-  background-color: #f39c12;
-=======
 /* ESTADÍSTICAS */
 .stats-grid {
   display: grid;
@@ -543,60 +449,24 @@ onMounted(() => {
 
 .tab-button.active {
   background-color: #3498db;
->>>>>>> 53acc713ec245b19d7175bb3b89c31e063f395f2
   color: white;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 1rem;
-  transition: background-color 0.3s;
 }
 
-.btn-edit:hover {
-  background-color: #e67e22;
+.tab-button:hover:not(.active) {
+  background-color: #ecf0f1;
 }
 
-.btn-delete {
-  background-color: #e74c3c;
-  color: white;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 1rem;
-  transition: background-color 0.3s;
-}
-
-.btn-delete:hover {
-  background-color: #c0392b;
-}
-
-.site-content {
-  display: grid;
-  grid-template-columns: 1fr 350px;
-  gap: 2rem;
-}
-
-.main-content {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-}
-
-section {
+.tab-content {
   background-color: white;
   padding: 2rem;
-  border-radius: 8px;
+  border-radius: 0 0 8px 8px;
 }
 
-section h2 {
+.tab-content h2 {
   margin: 0 0 1.5rem 0;
   color: #2c3e50;
 }
 
-<<<<<<< HEAD
-=======
 /* === ESTILOS PARA RESEÑAS (NUEVO: ESTILO TARJETA) === */
 .reviews-grid {
   display: grid;
@@ -668,19 +538,12 @@ section h2 {
 
 
 /* === ESTILOS PARA FOTOS (ESTILO TARJETA) === */
->>>>>>> 53acc713ec245b19d7175bb3b89c31e063f395f2
 .photos-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
 }
 
-<<<<<<< HEAD
-.btn-primary,
-.btn-secondary {
-  background-color: #27ae60;
-=======
 .photo-item {
   aspect-ratio: 1;
   border-radius: 8px;
@@ -733,102 +596,30 @@ section h2 {
 .btn-primary {
   display: inline-block;
   background-color: #3498db;
->>>>>>> 53acc713ec245b19d7175bb3b89c31e063f395f2
   color: white;
-  border: none;
   padding: 0.75rem 1.5rem;
   border-radius: 6px;
-  cursor: pointer;
-  font-size: 1rem;
+  text-decoration: none;
+  font-weight: 600;
   transition: background-color 0.3s;
 }
 
-.btn-secondary {
-  background-color: #95a5a6;
-}
-
 .btn-primary:hover {
-  background-color: #229954;
+  background-color: #2980b9;
 }
 
-.btn-secondary:hover {
-  background-color: #7f8c8d;
-}
+@media (max-width: 768px) {
+  .profile-header {
+    flex-direction: column;
+    text-align: center;
+  }
 
-.reviews-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-  overflow-wrap: break-word;
-}
-
-.reviews-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-
-  overflow-wrap: break-word;
-}
-
-.no-content {
-  color: #7f8c8d;
-  text-align: center;
-  padding: 2rem 0;
-}
-
-.sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.info-card {
-  background-color: white;
-  padding: 1.5rem;
-  border-radius: 8px;
-}
-
-.info-card h3 {
-  margin: 0 0 1rem 0;
-  color: #2c3e50;
-}
-
-.coordinates {
-  color: #2c3e50;
-  line-height: 1.8;
-  margin: 0 0 1rem 0;
-}
-
-.no-coordinates {
-  color: #95a5a6;
-  font-style: italic;
-  margin: 0 0 1rem 0;
-}
-
-.map-preview {
-  background-color: #ecf0f1;
-  border: 2px dashed #bdc3c7;
-  border-radius: 6px;
-  padding: 2rem;
-  text-align: center;
-  margin-top: 1rem;
-}
-
-.map-placeholder-text {
-  color: #7f8c8d;
-  font-size: 0.9rem;
-  margin: 0.5rem 0 0 0;
-}
-
-@media (max-width: 968px) {
-  .site-content {
+  .stats-grid {
     grid-template-columns: 1fr;
   }
 
-  .site-header {
+  .tabs {
     flex-direction: column;
-    gap: 1rem;
   }
 }
 </style>
