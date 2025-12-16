@@ -9,42 +9,6 @@ Descripción
 
 Red social interactiva donde los usuarios pueden descubrir, compartir y calificar sitios de interés turístico. La plataforma integra funcionalidades geoespaciales para búsquedas por ubicación, permitiendo a la comunidad colaborar en la creación de un recurso de viaje dinámico y actualizado.
 
-Características Principales
-
-- Autenticación segura con JWT
-- Catálogo de sitios turísticos (museos, parques, restaurantes, teatros)
-- Sistema de reseñas y calificaciones (1-5 estrellas)
-- Galería de fotografías de cada sitio
-- Listas personalizadas de lugares favoritos
-- Red social - Sigue a otros usuarios y ve sus contribuciones
-- Búsqueda geoespacial - Encuentra sitios cercanos usando PostGIS
-- Estadísticas en tiempo real - Triggers y vistas materializadas
-
----
-Tecnologías
-
-Backend
-- Spring Boot 3.5.7 con Java 17
-- PostgreSQL 14+ con extensión PostGIS
-- Spring Security + JWT (JSON Web Tokens)
-- JDBC nativo (sin JPA/Hibernate, solo SQL puro)
-- BCrypt para hashing de contraseñas
-
-Frontend
-- Vue.js 3.5.22 (Composition API)
-- Pinia para gestión de estado
-- Vue Router 4 para navegación
-- Axios 1.13.2 para peticiones HTTP
-- Vite como build tool
-
-Base de Datos
-- PostgreSQL 14+
-- PostGIS para datos geoespaciales
-- Triggers automáticos
-- Procedimientos almacenados
-- Vistas materializadas
-- Índices optimizados (B-Tree y GIST)
-
 
 Estructura del Proyecto
 
@@ -113,11 +77,18 @@ Ejecutar scripts de creación
 Crear esquema completo (tablas, triggers, vistas, índices)
 psql -U postgres -d lab1tbd -f SQL/tablitas.sql
 
-Agregar tabla de seguidores
-psql -U postgres -d lab1tbd -f SQL/crear_tabla_seguidores.sql
-
 Cargar datos de prueba
-psql -U postgres -d lab1tbd -f SQL/CARGAR_DATOS_WINDOWS.sql
+psql -U postgres -d lab1tbd -f SQL/CARGAR_DATOS.sql
+
+
+Otra forma de hacerlo:
+
+- iniciar pgAdmin
+- En database dar click derecho, seleccionar create -> database
+- Ingresar como nombre de la base de datos lab1tbd
+- En lab1 click derecho y seleccionamos Query tool
+- Una vez aqui copiamos y pegamos el contenido de tablitas.sql
+- Luego copiamos y pegamos en query tool tambien el contenido de CARGAR_DATOS.sql
 
 Verificar instalación
 
@@ -208,119 +179,6 @@ Flujo de Usuario
    Busca sitios a menos de 1km de Plaza de Armas, Santiago
 
 ---
-
-API Endpoints
-
-Autenticación
-
-POST   /auth/register           Registrar nuevo usuario
-POST   /auth/login              Iniciar sesión (retorna JWT)
-
-
-Usuarios
-
-GET    /users                   Listar usuarios
-GET    /users/{id}              Obtener usuario por ID
-PUT    /users/{id}              Actualizar usuario
-DELETE /users/{id}              Eliminar usuario
-
-
-Sitios Turísticos
-
-GET    /sitios                  Listar sitios
-GET    /sitios/{id}             Obtener sitio por ID
-POST   /sitios                  Crear sitio
-PUT    /sitios/{id}             Actualizar sitio
-DELETE /sitios/{id}             Eliminar sitio
-
-
-Reseñas
-
-GET    /resenas                 Listar reseñas
-GET    /resenas/sitio/{id}      Reseñas de un sitio
-POST   /resenas                 Crear reseña
-PUT    /resenas/{id}            Actualizar reseña
-DELETE /resenas/{id}            Eliminar reseña
-
-
-Fotografías
-
-GET    /fotografias             Listar fotografías
-GET    /fotografias/sitio/{id}  Fotos de un sitio
-POST   /fotografias             Subir fotografía
-DELETE /fotografias/{id}        Eliminar fotografía
-
-Listas
-
-GET    /listas                  Listar listas
-GET    /listas/usuario/{id}     Listas de un usuario
-POST   /listas                  Crear lista
-DELETE /listas/{id}             Eliminar lista
-POST   /listas/{id}/sitios/{sitioId}  Agregar sitio a lista
-
-
-Seguidores
-
-POST   /seguidores/follow/{id}     Seguir usuario
-DELETE /seguidores/unfollow/{id}   Dejar de seguir
-GET    /seguidores/{id}/followers  Seguidores de usuario
-GET    /seguidores/{id}/following  Usuarios seguidos
-GET    /seguidores/isfollowing/{id}  Verificar si sigues a usuario
-
-
-Estadísticas
-GET    /estadisticas/usuario/{id}  Estadísticas de usuario
-
-
-Autenticación: Todos los endpoints (excepto/auth/*) requieren header:
-
-Authorization: Bearer <JWT_TOKEN>
-
-
----
-
-Base de Datos
-
-Esquema
-
-La base de datos está normalizada en 3FN con las siguientes tablas:
-
-- usuarios - Información de usuarios
-- sitios_turisticos - Lugares turísticos (con coordenadas PostGIS)
-- reseñas - Calificaciones y comentarios
-- fotografias - URLs de imágenes
-- listas_personalizadas - Listas creadas por usuarios
-- lista_sitios - Relación N:M entre listas y sitios
-- seguidores - Relación de seguimiento entre usuarios
-
-Elementos Avanzados
-
-Triggers
-- trigger_actualizar_calificacion: Actualiza automáticamente calificacion_promedio y total_reseñas cuando se modifica una reseña.
-
-Procedimientos Almacenados
-- buscar_sitios_cercanos(long, lat, radio): Búsqueda geoespacial usando PostGIS.
-
-Vistas Materializadas
-- resumen_contribuciones_usuario: Pre-calcula estadísticas de usuarios (reseñas, fotos, listas).
-
-Índices
-- B-Tree en foreign keys para JOINs rápidos
-- GIST en columna coordenadas para búsquedas geoespaciales eficientes
-
-### Consultas SQL Implementadas
-
-Las 9 consultas requeridas están en SQL/consultas_enunciado.sql:
-
-1. Calificación promedio y conteo por tipo de sitio
-2. Top 5 reseñadores más activos (últimos 6 meses)
-3. Restaurantes a <100m de teatros (búsqueda geoespacial)
-4. Sitios con calificación >4.5 y <10 reseñas
-5. Total de reseñas por región/ciudad
-6. Trigger de actualización automática de calificaciones
-7. Sitios sin contribuciones en 3 meses
-8. 3 reseñas más largas de usuarios con promedio >4.0
-9. Vista materializada de resumen de contribuciones
 
 
 ---
