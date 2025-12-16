@@ -342,8 +342,6 @@ Causa: Tablas no creadas.
 Solución:
 
 psql -U postgres -d lab1tbd -f SQL/tablitas.sql
-psql -U postgres -d lab1tbd -f SQL/crear_tabla_seguidores.sql
-
 
 ---
 
@@ -382,11 +380,11 @@ psql -U postgres -d lab1tbd -f SQL/CARGAR_DATOS.sql
 Grupo 5
 
 Integrantes:
-- 
--
--
--
--
+-Cristopher Torres
+-Maximiliano Ojeda
+-German Peralta Huaiquiñir
+-Matías Véjar
+-Vladimir Vidal
 
 
 Curso: Taller de Base de Datos  2-2025
